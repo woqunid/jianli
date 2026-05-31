@@ -1,5 +1,6 @@
 import type {
   AiResumeAction,
+  AiGeneratedSection,
   AiResumeRequest,
   AiResumeResponse,
   AiResumeSection,
@@ -19,7 +20,12 @@ const FIELD_NAMES: Readonly<Record<string, string>> = {
   extraInfo: "补充信息",
   jobDescription: "岗位 JD",
   matchedKeywords: "匹配关键词",
+  matchScore: "匹配度",
   missingKeywords: "缺失关键词",
+  generatedSections: "生成候选内容模块",
+  "generatedSection.content": "候选内容",
+  "generatedSection.section": "候选内容模块",
+  "generatedSection.title": "候选内容标题",
   reason: "建议原因",
   resumeData: "简历数据",
   section: "优化范围",
@@ -60,8 +66,10 @@ export function parseAiResumeResponse(text: string): AiResumeResponse {
   const suggestions = requireArray(input.suggestions, "suggestions").map(readSuggestion)
   return {
     summary: requireString(input.summary, "summary"),
+    matchScore: readOptionalNumber(input.matchScore, "matchScore"),
     matchedKeywords: readStringArray(input.matchedKeywords, "matchedKeywords"),
     missingKeywords: readStringArray(input.missingKeywords, "missingKeywords"),
+    generatedSections: readOptionalGeneratedSections(input.generatedSections),
     suggestions,
   }
 }
@@ -76,7 +84,7 @@ function parseJson(text: string): unknown {
 }
 
 function parseJsonFromWrappedText(text: string): unknown {
-  const candidates = [readJsonFence(text), readJsonObject(text)].filter(Boolean)
+  const candidates = [readJsonFence(text), readJsonObject(text)].filter(isString)
   for (const candidate of candidates) {
     try {
       return JSON.parse(candidate) as unknown
@@ -85,6 +93,10 @@ function parseJsonFromWrappedText(text: string): unknown {
     }
   }
   throw new Error("AI 响应不是合法 JSON")
+}
+
+function isString(value: string | null): value is string {
+  return typeof value === "string"
 }
 
 function readJsonFence(text: string): string | null {
@@ -125,6 +137,9 @@ function readTarget(value: unknown): AiResumeSuggestionTarget {
   if (type === "moduleTags") {
     return readModuleTagsTarget(input)
   }
+  if (type === "moduleContent") {
+    return readModuleContentTarget(input)
+  }
   throw new Error(`不支持的写回目标类型：${type}`)
 }
 
@@ -147,8 +162,42 @@ function readModuleTagsTarget(input: Record<string, unknown>): AiResumeSuggestio
   }
 }
 
+function readModuleContentTarget(input: Record<string, unknown>): AiResumeSuggestionTarget {
+  return {
+    type: "moduleContent",
+    moduleId: requireString(input.moduleId, "target.moduleId"),
+    field: "content",
+  }
+}
+
+function readOptionalGeneratedSections(value: unknown): readonly AiGeneratedSection[] | undefined {
+  if (value === undefined) return undefined
+  return requireArray(value, "generatedSections").map(readGeneratedSection)
+}
+
+function readGeneratedSection(value: unknown): AiGeneratedSection {
+  const input = requireRecord(value, "generatedSection")
+  return {
+    section: readSection(input.section),
+    title: requireString(input.title, "generatedSection.title"),
+    content: requireString(input.content, "generatedSection.content"),
+  }
+}
+
 function readSection(value: unknown): AiResumeSection {
   return requireEnum(value, SECTIONS, "section") as AiResumeSection
+}
+
+function readOptionalNumber(value: unknown, name: string): number | undefined {
+  if (value === undefined) return undefined
+  return requireNumber(value, name)
+}
+
+function requireNumber(value: unknown, name: string): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    throw new Error(`${getFieldName(name)} 必须是数字`)
+  }
+  return value
 }
 
 function readStringArray(value: unknown, name: string): readonly string[] {

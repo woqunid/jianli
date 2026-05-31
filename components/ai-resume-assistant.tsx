@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { useToast } from "@/hooks/use-toast"
 import { applyAiResumeSuggestion } from "@/lib/ai/resume-apply"
+import { collectAiResumeInputErrors } from "@/lib/ai/resume-requirements"
 import type { AiResumeAction, AiResumeResponse, AiResumeSection, AiResumeSuggestion } from "@/types/ai-resume"
 import type { ResumeData } from "@/types/resume"
 import { Icon } from "@iconify/react"
@@ -33,8 +34,9 @@ export default function AiResumeAssistant({ resumeData, onApplyResumeData }: AiR
   const submit = async () => {
     const role = targetRole.trim() || findTargetRole(resumeData)
     const jd = jobDescription.trim()
-    if (!jd) {
-      toast({ title: "无法生成 AI 建议", description: "请先粘贴目标岗位 JD", variant: "destructive" })
+    const errors = collectAiResumeInputErrors({ action, extraInfo, jobDescription: jd, resumeData, targetRole: role })
+    if (errors.length > 0) {
+      toast({ title: "无法生成 AI 建议", description: errors.join("；"), variant: "destructive" })
       return
     }
     if (sections.length === 0) {
@@ -104,7 +106,7 @@ export default function AiResumeAssistant({ resumeData, onApplyResumeData }: AiR
               icon={isLoading ? "mdi:loading" : "mdi:sparkles"}
               className={`h-4 w-4 ${isLoading ? "animate-spin" : ""}`}
             />
-            {isLoading ? "生成中" : "生成 AI 建议"}
+            {isLoading ? "生成中" : readSubmitLabel(action)}
           </Button>
           <AiSuggestionPanel result={result} isLoading={isLoading} onApply={apply} onRegenerate={submit} />
         </div>
@@ -152,4 +154,10 @@ function readErrorMessage(data: unknown): string {
 function findTargetRole(resumeData: ResumeData): string {
   const items = resumeData.jobIntentionSection?.items ?? []
   return items.find((item) => item.type === "position")?.value ?? ""
+}
+
+function readSubmitLabel(action: AiResumeAction): string {
+  if (action === "analyze") return "分析匹配度"
+  if (action === "generate") return "生成候选内容"
+  return "生成 AI 建议"
 }

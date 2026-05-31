@@ -1,11 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/hooks/use-toast"
-import type { AiResumeResponse, AiResumeSuggestion } from "@/types/ai-resume"
+import type { AiResumeResponse, AiResumeSection, AiResumeSuggestion } from "@/types/ai-resume"
 import { Icon } from "@iconify/react"
 
 interface AiSuggestionPanelProps {
@@ -19,6 +19,11 @@ export default function AiSuggestionPanel(props: AiSuggestionPanelProps) {
   const { toast } = useToast()
   const [ignored, setIgnored] = useState<ReadonlySet<number>>(new Set())
   const [applied, setApplied] = useState<ReadonlySet<number>>(new Set())
+
+  useEffect(() => {
+    setIgnored(new Set())
+    setApplied(new Set())
+  }, [props.result])
 
   if (!props.result) {
     return <EmptyState isLoading={props.isLoading} />
@@ -93,9 +98,20 @@ function Summary({
           重新生成
         </Button>
       </div>
+      {result.matchScore !== undefined ? <MatchScore score={result.matchScore} /> : null}
       <p className="text-sm leading-6 text-muted-foreground">{result.summary}</p>
-      <KeywordList label="匹配关键词" keywords={result.matchedKeywords} />
-      <KeywordList label="待补充关键词" keywords={result.missingKeywords} />
+      <KeywordList label={result.matchScore === undefined ? "匹配关键词" : "匹配内容"} keywords={result.matchedKeywords} />
+      <KeywordList label={result.matchScore === undefined ? "待补充关键词" : "不匹配内容"} keywords={result.missingKeywords} />
+      <GeneratedSections result={result} />
+    </div>
+  )
+}
+
+function MatchScore({ score }: { readonly score: number }) {
+  return (
+    <div className="mb-3 rounded-md border border-primary/20 bg-primary/5 p-3">
+      <div className="text-xs text-muted-foreground">匹配度</div>
+      <div className="mt-1 text-2xl font-semibold text-primary">{score}%</div>
     </div>
   )
 }
@@ -109,6 +125,20 @@ function KeywordList({ label, keywords }: { readonly label: string; readonly key
         <Badge key={keyword} variant="secondary" className="text-xs">
           {keyword}
         </Badge>
+      ))}
+    </div>
+  )
+}
+
+function GeneratedSections({ result }: { readonly result: AiResumeResponse }) {
+  if (!result.generatedSections?.length) return null
+  return (
+    <div className="mt-4 space-y-3">
+      {result.generatedSections.map((section) => (
+        <div key={section.section} className="rounded-md border bg-muted/30 p-3">
+          <div className="mb-1 text-xs font-medium text-muted-foreground">{readSectionLabel(section.section)}</div>
+          <div className="text-sm leading-6 whitespace-pre-wrap">{section.content}</div>
+        </div>
       ))}
     </div>
   )
@@ -154,6 +184,20 @@ function SuggestionItem({
       </div>
     </div>
   )
+}
+
+function readSectionLabel(section: AiResumeSection): string {
+  const labels: Readonly<Record<AiResumeSection, string>> = {
+    jobIntention: "求职意向",
+    skills: "专业技能",
+    experience: "工作经历",
+    projects: "项目经历",
+    careerSkills: "职业技能",
+    summary: "个人总结",
+    proofread: "全文纠错",
+    jdAnalysis: "JD 匹配度分析",
+  }
+  return labels[section]
 }
 
 function BeforeAfter({ suggestion }: { readonly suggestion: AiResumeSuggestion }) {

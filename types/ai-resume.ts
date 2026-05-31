@@ -7,6 +7,7 @@ export const AI_RESUME_SECTIONS = [
   "skills",
   "experience",
   "projects",
+  "careerSkills",
   "summary",
   "proofread",
   "jdAnalysis",
@@ -44,6 +45,11 @@ export type AiResumeSuggestionTarget =
       readonly rowId: string
       readonly field: "tags"
     }
+  | {
+      readonly type: "moduleContent"
+      readonly moduleId: string
+      readonly field: "content"
+    }
 
 export interface AiResumeSuggestion {
   readonly target: AiResumeSuggestionTarget
@@ -54,9 +60,17 @@ export interface AiResumeSuggestion {
   readonly reason: string
 }
 
+export interface AiGeneratedSection {
+  readonly section: AiResumeSection
+  readonly title: string
+  readonly content: string
+}
+
 export interface AiResumeResponse {
   readonly summary: string
+  readonly matchScore?: number
   readonly matchedKeywords: readonly string[]
   readonly missingKeywords: readonly string[]
+  readonly generatedSections?: readonly AiGeneratedSection[]
   readonly suggestions: readonly AiResumeSuggestion[]
 }
