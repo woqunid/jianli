@@ -23,15 +23,23 @@ export async function postJson(
   const text = await response.text();
 
   if (!response.ok) {
-    throw new AiProviderError(response.status, text || response.statusText);
+    throw new AiProviderError(response.status, `AI 服务请求失败（状态码 ${response.status}）：${text || response.statusText}`);
   }
 
-  return text ? JSON.parse(text) : {};
+  if (!text) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    throw new Error("AI 服务响应不是合法 JSON");
+  }
 }
 
 export function requireString(value: unknown, path: string): string {
   if (typeof value !== "string" || !value.trim()) {
-    throw new Error(`AI provider response missing text at ${path}`);
+    throw new Error(`AI 服务响应缺少文本字段：${path}`);
   }
   return value;
 }

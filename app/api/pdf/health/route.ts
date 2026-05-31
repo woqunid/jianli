@@ -9,7 +9,7 @@ export async function GET() {
     const envPath = process.env.PUPPETEER_EXECUTABLE_PATH || process.env.CHROME_PATH || "";
     const resolvedPath = envPath || (await chromium.executablePath());
     if (!resolvedPath) {
-      return new Response(JSON.stringify({ ok: false, error: "No executablePath (set PUPPETEER_EXECUTABLE_PATH)" }), {
+      return new Response(JSON.stringify({ ok: false, error: "未找到浏览器可执行路径，请设置 PUPPETEER_EXECUTABLE_PATH" }), {
         status: 503,
         headers: { "content-type": "application/json" },
       });
@@ -39,7 +39,7 @@ export async function GET() {
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     return new Response(
-      JSON.stringify({ ok: false, error: message }),
+      JSON.stringify({ ok: false, error: `PDF 服务健康检查失败：${message}` }),
       { status: 503, headers: { "content-type": "application/json" } }
     );
   }

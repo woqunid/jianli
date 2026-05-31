@@ -61,7 +61,7 @@ export async function POST(req: Request) {
       }
     }
     if (!resumeData) {
-      return new Response(JSON.stringify({ error: "Missing resumeData" }), {
+      return new Response(JSON.stringify({ error: "缺少 resumeData" }), {
         status: 400,
         headers: { "content-type": "application/json" },
       });
@@ -69,7 +69,7 @@ export async function POST(req: Request) {
 
     const origin = getOrigin(req);
     if (!origin) {
-      return new Response(JSON.stringify({ error: "Cannot resolve origin" }), {
+      return new Response(JSON.stringify({ error: "无法解析请求来源" }), {
         status: 400,
         headers: { "content-type": "application/json" },
       });
@@ -79,7 +79,7 @@ export async function POST(req: Request) {
     const envPath = process.env.PUPPETEER_EXECUTABLE_PATH || process.env.CHROME_PATH || "";
     const executablePath = envPath || (await chromium.executablePath());
     if (!executablePath) {
-      return new Response(JSON.stringify({ error: "Chromium executable not found (set PUPPETEER_EXECUTABLE_PATH)" }), {
+      return new Response(JSON.stringify({ error: "未找到 Chromium 可执行文件，请设置 PUPPETEER_EXECUTABLE_PATH" }), {
         status: 503,
         headers: { "content-type": "application/json" },
       });
@@ -205,7 +205,7 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    return new Response(JSON.stringify({ error: message }), {
+    return new Response(JSON.stringify({ error: `PDF 生成失败：${message}` }), {
       status: 500,
       headers: { "content-type": "application/json" },
     });

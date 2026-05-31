@@ -14,7 +14,7 @@ const ToolbarContext = createContext<ToolbarContextType | null>(null)
 export function useToolbarManager() {
   const context = useContext(ToolbarContext)
   if (!context) {
-    throw new Error('useToolbarManager must be used within ToolbarProvider')
+    throw new Error('useToolbarManager 必须在 ToolbarProvider 内使用')
   }
   return context
 }

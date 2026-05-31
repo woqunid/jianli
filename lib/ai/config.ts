@@ -17,7 +17,7 @@ const PROVIDERS = new Set<AiProvider>(["openai", "anthropic", "gemini"]);
 function readRequiredEnv(name: string): string {
   const value = process.env[name]?.trim();
   if (!value) {
-    throw new Error(`Missing required environment variable: ${name}`);
+    throw new Error(`缺少必需的环境变量：${name}`);
   }
   return value;
 }
@@ -25,7 +25,7 @@ function readRequiredEnv(name: string): string {
 function readProvider(): AiProvider {
   const value = process.env.AI_PROVIDER?.trim().toLowerCase();
   if (!PROVIDERS.has(value as AiProvider)) {
-    throw new Error("AI_PROVIDER must be one of: openai, anthropic, gemini");
+    throw new Error("AI_PROVIDER 必须是 openai、anthropic 或 gemini");
   }
   return value as AiProvider;
 }

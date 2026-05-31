@@ -84,7 +84,7 @@ export async function POST(
     }
 
     if (!resumeData) {
-      return new Response(JSON.stringify({ error: "Missing resumeData" }), {
+      return new Response(JSON.stringify({ error: "缺少 resumeData" }), {
         status: 400,
         headers: { "content-type": "application/json" },
       });
@@ -92,7 +92,7 @@ export async function POST(
 
     const origin = getOrigin(req);
     if (!origin) {
-      return new Response(JSON.stringify({ error: "Cannot resolve origin" }), {
+      return new Response(JSON.stringify({ error: "无法解析请求来源" }), {
         status: 400,
         headers: { "content-type": "application/json" },
       });
@@ -102,7 +102,7 @@ export async function POST(
     const envPath = process.env.PUPPETEER_EXECUTABLE_PATH || process.env.CHROME_PATH || "";
     const executablePath = envPath || (await chromium.executablePath());
     if (!executablePath) {
-      return new Response(JSON.stringify({ error: "Chromium executable not found (set PUPPETEER_EXECUTABLE_PATH)" }), {
+      return new Response(JSON.stringify({ error: "未找到 Chromium 可执行文件，请设置 PUPPETEER_EXECUTABLE_PATH" }), {
         status: 503,
         headers: { "content-type": "application/json" },
       });
@@ -224,7 +224,7 @@ export async function POST(
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    return new Response(JSON.stringify({ error: message }), {
+    return new Response(JSON.stringify({ error: `PDF 生成失败：${message}` }), {
       status: 500,
       headers: { "content-type": "application/json" },
     });
@@ -261,12 +261,13 @@ export async function GET(
       });
     }
     // 若缓存失效或缺失，返回 404，提示用户重新生成
-    return new Response(JSON.stringify({ error: "PDF cache expired. Please regenerate." }), {
+    return new Response(JSON.stringify({ error: "PDF 缓存已过期，请重新生成" }), {
       status: 404,
       headers: { "content-type": "application/json" },
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: (error instanceof Error ? error.message : String(error)) }), {
+    const message = error instanceof Error ? error.message : String(error);
+    return new Response(JSON.stringify({ error: `PDF 读取失败：${message}` }), {
       status: 500,
       headers: { "content-type": "application/json" },
     });

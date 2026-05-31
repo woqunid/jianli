@@ -17,6 +17,7 @@ import PersonalInfoEditor from "./personal-info-editor"
 import JobIntentionEditor from "./job-intention-editor"
 import ModuleEditor from "./module-editor"
 import ExportButton from "./export-button"
+import AiResumeAssistant from "./ai-resume-assistant"
 
 type ViewMode = "both" | "edit-only" | "preview-only"
 
@@ -101,6 +102,16 @@ export default function ResumeBuilder({ initialData, template = "default", onCha
     }))
   }, [])
 
+  const replaceResumeData = useCallback((resumeData: ResumeData) => {
+    setEditorState((prev) => ({
+      ...prev,
+      resumeData: {
+        ...resumeData,
+        updatedAt: new Date().toISOString(),
+      },
+    }))
+  }, [])
+
   // 将变更在提交阶段通知父组件，避免在渲染中更新父组件
   useEffect(() => {
     onChange?.(editorState.resumeData)
@@ -137,6 +148,11 @@ export default function ResumeBuilder({ initialData, template = "default", onCha
           <Separator orientation="vertical" className="h-6" />
 
           <ViewModeSelector viewMode={viewMode} onViewModeChange={handleViewModeChange} />
+
+          <AiResumeAssistant
+            resumeData={editorState.resumeData}
+            onApplyResumeData={replaceResumeData}
+          />
 
           {/* 保存 */}
           {onSave ? (

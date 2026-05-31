@@ -12,7 +12,7 @@ const ColorPickerContext = createContext<ColorPickerContextType | null>(null)
 export function useColorPicker() {
   const context = useContext(ColorPickerContext)
   if (!context) {
-    throw new Error('useColorPicker must be used within ColorPickerProvider')
+    throw new Error('useColorPicker 必须在 ColorPickerProvider 内使用')
   }
   return context
 }

@@ -12,16 +12,16 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const raw = searchParams.get("url") || "";
-    if (!raw) return badRequest("Missing url");
+    if (!raw) return badRequest("缺少 url 参数");
 
     let target: URL;
-    try { target = new URL(raw); } catch { return badRequest("Invalid url"); }
-    if (!/^https?:$/i.test(target.protocol)) return badRequest("Only http/https allowed");
+    try { target = new URL(raw); } catch { return badRequest("url 格式无效"); }
+    if (!/^https?:$/i.test(target.protocol)) return badRequest("只允许 http/https 地址");
 
     // Basic SSRF protection: block localhost and private ranges
     const hostname = target.hostname.toLowerCase();
     if (hostname === "localhost" || hostname === "127.0.0.1" || hostname === "::1") {
-      return badRequest("Blocked host");
+      return badRequest("该主机已被阻止");
     }
 
     const res = await fetch(target.toString(), {
@@ -32,7 +32,7 @@ export async function GET(req: Request) {
       },
     });
     if (!res.ok || !res.body) {
-      return badRequest(`Upstream fetch failed: ${res.status} ${res.statusText}`, 502);
+      return badRequest(`上游图片获取失败：${res.status} ${res.statusText}`, 502);
     }
     const ct = res.headers.get("content-type") || "application/octet-stream";
     const headers = new Headers({
@@ -43,7 +43,7 @@ export async function GET(req: Request) {
     return new Response(res.body, { status: 200, headers });
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e || "");
-    return badRequest(msg, 500);
+    return badRequest(`图片代理失败：${msg}`, 500);
   }
 }
 

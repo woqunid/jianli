@@ -283,7 +283,7 @@ SITE_PASSWORD=你的访问密码
 
 ### 集成 AI 服务
 - [x] 允许用户自定义服务提供商和模型，支持 OpenAI、Anthropic、Gemini等接口类型
-- [ ] 结合 Job Description 自动编写、润色、优化、纠错简历
+- [X] 结合 Job Description 自动编写、润色、优化、纠错简历
 - [ ] 基于简历给出面试准备建议
 - [ ] 模拟面试
 - [ ] 利用 AI Agent 从网络自动抓取并汇总相似岗位的面经并展示

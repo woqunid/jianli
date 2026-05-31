@@ -1,6 +1,6 @@
 "use client"
 
-import { use, useMemo, useState } from "react"
+import { use, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import ResumeBuilder from "@/components/resume-builder"
 import { Button } from "@/components/ui/button"
@@ -14,12 +14,18 @@ export default function EditPage({ params }: { params: Promise<{ id: string }> }
   const router = useRouter()
   const { toast } = useToast()
   const [, setCurrentData] = useState<ResumeData | null>(null)
+  const [entry, setEntry] = useState<StoredResume | null>(null)
+  const [isLoaded, setIsLoaded] = useState(false)
 
-  const entry = useMemo<StoredResume | null>(() => getResumeById(id), [id])
+  useEffect(() => {
+    setEntry(getResumeById(id))
+    setIsLoaded(true)
+  }, [id])
 
   const handleSave = async (data: ResumeData) => {
     try {
       const updated = updateEntryData(id, data)
+      setEntry(updated)
       toast({ title: "保存成功", description: new Date(updated.updatedAt).toLocaleString() })
     } catch (e: unknown) {
       if (e instanceof StorageError && e.code === "QUOTA_EXCEEDED") {
@@ -33,6 +39,14 @@ export default function EditPage({ params }: { params: Promise<{ id: string }> }
         toast({ title: "保存失败", description: message, variant: "destructive" })
       }
     }
+  }
+
+  if (!isLoaded) {
+    return (
+      <main className="min-h-screen bg-background p-6">
+        <span className="text-sm text-muted-foreground">正在加载简历...</span>
+      </main>
+    )
   }
 
   if (!entry) {

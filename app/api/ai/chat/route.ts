@@ -18,14 +18,14 @@ function isMessage(value: unknown): value is AiMessage {
 
 function parseOptions(body: unknown): AiChatOptions {
   if (!body || typeof body !== "object") {
-    throw new Error("Request body must be a JSON object");
+    throw new Error("请求体必须是 JSON 对象");
   }
   const input = body as Record<string, unknown>;
   if (!Array.isArray(input.messages) || !input.messages.every(isMessage)) {
-    throw new Error("messages must be an array of { role, content }");
+    throw new Error("messages 必须是由 { role, content } 组成的数组");
   }
   if (input.messages.length === 0) {
-    throw new Error("messages must contain at least one item");
+    throw new Error("messages 至少需要包含一条消息");
   }
   return {
     messages: input.messages,
@@ -40,14 +40,17 @@ function readOptionalNumber(value: unknown, name: string): number | undefined {
     return undefined;
   }
   if (typeof value !== "number" || !Number.isFinite(value)) {
-    throw new Error(`${name} must be a finite number`);
+    throw new Error(`${name} 必须是有限数字`);
   }
   return value;
 }
 
 export async function POST(req: Request) {
   try {
-    const options = parseOptions(await req.json());
+    const body = await req.json().catch(() => {
+      throw new Error("请求体不是合法 JSON");
+    });
+    const options = parseOptions(body);
     const result = await createAiChatCompletion(options);
     return NextResponse.json(result);
   } catch (error) {
