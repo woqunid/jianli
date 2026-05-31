@@ -179,6 +179,64 @@ export interface ResumeData {
 - `NEXT_PUBLIC_FORCE_PRINT=true` 强制使用浏览器打印
 - `PUPPETEER_EXECUTABLE_PATH=/path/to/chrome` 或 `CHROME_PATH=/path/to/chrome` 指定系统 Chrome 可执行文件（在某些平台上更稳定）
 
+### AI 服务配置
+
+项目已提供统一 AI 聊天接口：`POST /api/ai/chat`。接口在服务端读取环境变量，支持 OpenAI、Anthropic、Gemini，以及兼容 OpenAI Chat Completions 格式的第三方地址。
+
+在项目根目录创建 `.env.local`：
+
+```bash
+AI_PROVIDER=openai
+AI_BASE_URL=https://api.openai.com/v1
+AI_API_KEY=你的 API Key
+AI_MODEL=gpt-4o-mini
+```
+
+不同服务商示例：
+
+```bash
+# OpenAI 或 OpenAI 兼容接口
+AI_PROVIDER=openai
+AI_BASE_URL=https://api.openai.com/v1
+AI_MODEL=gpt-4o-mini
+
+# Anthropic
+AI_PROVIDER=anthropic
+AI_BASE_URL=https://api.anthropic.com/v1
+AI_MODEL=claude-3-5-haiku-latest
+
+# Gemini
+AI_PROVIDER=gemini
+AI_BASE_URL=https://generativelanguage.googleapis.com/v1beta
+AI_MODEL=gemini-2.5-flash
+```
+
+测试接口：
+
+```bash
+pnpm dev
+```
+
+另开一个终端执行：
+
+```bash
+curl -X POST http://localhost:3000/api/ai/chat \
+  -H "Content-Type: application/json" \
+  -d "{\"messages\":[{\"role\":\"user\",\"content\":\"用一句中文回复：AI 接口已连通\"}]}"
+```
+
+成功时会返回：
+
+```json
+{
+  "provider": "openai",
+  "model": "gpt-4o-mini",
+  "text": "AI 接口已连通。"
+}
+```
+
+如果环境变量缺失或服务商返回错误，接口会直接返回明确的错误信息，便于定位配置或网络问题。
+
 接口说明
 - `GET /api/pdf/health`：健康检查，验证 headless 启动能力
 - `POST /api/pdf`：传入`{ resumeData }`，直接返回`application/pdf`
