@@ -11,6 +11,13 @@ import { AI_RESUME_ACTIONS, AI_RESUME_SECTIONS } from "@/types/ai-resume"
 
 const ACTIONS = new Set<string>(AI_RESUME_ACTIONS)
 const SECTIONS = new Set<string>(AI_RESUME_SECTIONS)
+const ANALYZE_RESPONSE_KEYS = new Set<string>([
+  "summary",
+  "matchScore",
+  "matchedKeywords",
+  "missingKeywords",
+  "improvementDirections",
+])
 const FIELD_NAMES: Readonly<Record<string, string>> = {
   "request body": "请求体",
   "AI response": "AI 响应",
@@ -79,6 +86,7 @@ export function parseAiResumeResponse(text: string, action?: AiResumeAction): Ai
 }
 
 function readAnalyzeResponse(input: Record<string, unknown>): AiResumeResponse {
+  assertAnalyzeResponseKeys(input)
   return {
     summary: requireString(input.summary, "summary"),
     matchScore: readOptionalNumber(input.matchScore, "matchScore"),
@@ -86,6 +94,13 @@ function readAnalyzeResponse(input: Record<string, unknown>): AiResumeResponse {
     missingKeywords: readStringArray(input.missingKeywords, "missingKeywords"),
     improvementDirections: readStringArray(input.improvementDirections, "improvementDirections"),
     suggestions: [],
+  }
+}
+
+function assertAnalyzeResponseKeys(input: Record<string, unknown>): void {
+  const invalidKeys = Object.keys(input).filter((key) => !ANALYZE_RESPONSE_KEYS.has(key))
+  if (invalidKeys.length > 0) {
+    throw new Error(`AI 分析响应包含不允许的字段：${invalidKeys.join("、")}`)
   }
 }
 

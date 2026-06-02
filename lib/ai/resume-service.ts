@@ -1,14 +1,13 @@
 import { createAiChatCompletion } from "@/lib/ai/client"
 import { buildResumePrompt, type ResumeSummary } from "@/lib/ai/resume-prompt"
-import { REQUIRED_AI_RESUME_MODULES, validateAiResumeInput } from "@/lib/ai/resume-requirements"
+import { validateAiResumeResponse } from "@/lib/ai/resume-response-validation"
+import { validateAiResumeInput } from "@/lib/ai/resume-requirements"
 import { parseAiResumeResponse } from "@/lib/ai/resume-schema"
 import type { AiResumeRequest, AiResumeResponse } from "@/types/ai-resume"
 import type { JSONContent, ResumeData, ResumeModule } from "@/types/resume"
 
 const RESUME_MAX_TOKENS = 2800
 const RESUME_TEMPERATURE = 0.2
-const MIN_MATCH_SCORE = 0
-const MAX_MATCH_SCORE = 100
 
 export async function createAiResumeSuggestions(request: AiResumeRequest): Promise<AiResumeResponse> {
   validateAiResumeInput(request)
@@ -22,33 +21,6 @@ export async function createAiResumeSuggestions(request: AiResumeRequest): Promi
   const response = parseAiResumeResponse(result.text, request.action)
   validateAiResumeResponse(request, response)
   return response
-}
-
-function validateAiResumeResponse(request: AiResumeRequest, response: AiResumeResponse): void {
-  if (request.action === "analyze") validateAnalyzeResponse(response)
-  if (request.action === "generate") validateGenerateResponse(response)
-}
-
-function validateAnalyzeResponse(response: AiResumeResponse): void {
-  const score = response.matchScore
-  if (score === undefined) throw new Error("AI 响应缺少匹配度")
-  if (!Number.isInteger(score) || score < MIN_MATCH_SCORE || score > MAX_MATCH_SCORE) {
-    throw new Error("AI 响应的匹配度必须是 0 到 100 的整数")
-  }
-}
-
-function validateGenerateResponse(response: AiResumeResponse): void {
-  const sections = new Set((response.generatedSections ?? []).map((item) => item.section))
-  const suggestionSections = new Set(response.suggestions.map((item) => item.section))
-  const missing = REQUIRED_AI_RESUME_MODULES.filter((requirement) => {
-    return !sections.has(requirement.section) || !suggestionSections.has(requirement.section)
-  })
-  if (missing.length > 0) {
-    throw new Error(`AI 响应缺少候选内容模块：${missing.map((item) => item.label).join("、")}`)
-  }
-  if (response.suggestions.some((suggestion) => suggestion.target.type !== "moduleContent")) {
-    throw new Error("AI 响应的生成候选内容建议必须写回到简历模块")
-  }
 }
 
 function summarizeResume(resumeData: ResumeData, targetRole: string): ResumeSummary {

@@ -1,4 +1,9 @@
 import type { AiMessage } from "@/lib/ai/types"
+import {
+  ANALYZE_RESPONSE_EXAMPLE,
+  GENERATE_RESPONSE_EXAMPLE,
+  OPTIMIZE_RESPONSE_EXAMPLE,
+} from "@/lib/ai/resume-prompt-examples"
 import { findModuleByRequirement, REQUIRED_AI_RESUME_MODULES } from "@/lib/ai/resume-requirements"
 import type { AiResumeAction, AiResumeRequest, AiResumeSection } from "@/types/ai-resume"
 
@@ -43,7 +48,7 @@ const SYSTEM_PROMPT = `你是专业中文简历优化助手。
 
 const EXAMPLE_MATCH_SCORE = 82
 
-const RESPONSE_SCHEMA = {
+const OPTIMIZE_RESPONSE_SCHEMA = {
   summary: "整体匹配度说明",
   matchedKeywords: ["React", "Next.js", "TypeScript"],
   missingKeywords: ["性能优化", "工程化"],
@@ -102,7 +107,7 @@ const GENERATE_RESPONSE_SCHEMA = {
 
 const ACTION_PROMPT_BUILDERS: Readonly<Record<AiResumeAction, PromptBuilder>> = {
   analyze: buildAnalyzePrompt,
-  optimize: buildDefaultPrompt,
+  optimize: buildOptimizePrompt,
   generate: buildGeneratePrompt,
   proofread: buildDefaultPrompt,
 }
@@ -134,6 +139,13 @@ function buildAnalyzePrompt(request: AiResumeRequest, summary: ResumeSummary): r
   ]
 }
 
+function buildOptimizePrompt(request: AiResumeRequest, summary: ResumeSummary): readonly AiMessage[] {
+  return [
+    { role: "system", content: OPTIMIZE_WRITABLE_PROMPT },
+    { role: "user", content: buildOptimizeUserPrompt(request, summary) },
+  ]
+}
+
 function buildGeneratePrompt(request: AiResumeRequest, summary: ResumeSummary): readonly AiMessage[] {
   return [
     { role: "system", content: GENERATE_CANDIDATE_PROMPT },
@@ -153,7 +165,7 @@ function buildUserPrompt(request: AiResumeRequest, summary: ResumeSummary): stri
     "当前简历摘要（含可写回 ID）：",
     JSON.stringify(summary, null, 2),
     "返回 JSON schema：",
-    JSON.stringify(RESPONSE_SCHEMA, null, 2),
+    JSON.stringify(OPTIMIZE_RESPONSE_SCHEMA, null, 2),
   ].join("\n\n")
 }
 
@@ -166,6 +178,17 @@ matchedKeywords 必须列出简历中已有证据支撑的匹配点。
 missingKeywords 必须列出 JD 要求中当前简历未体现、证据不足或表达薄弱的点。
 improvementDirections 必须列出只读改进方向，用于告诉用户接下来应补充哪些真实经历、指标或技能证据。
 分析匹配度是只读分析，不要返回 suggestions 字段，也不要输出可写回改写内容。
+必须稳定返回且仅返回以下顶层字段：summary、matchScore、matchedKeywords、missingKeywords、improvementDirections。
+输出必须是严格 JSON，不要输出 Markdown、代码块或解释文本。`
+
+// 此处填写可写回优化提示词
+const OPTIMIZE_WRITABLE_PROMPT = `你是专业中文简历可写回优化助手。
+你必须基于用户提供的简历摘要、JD 和补充信息输出可写回建议。
+不得编造公司、学历、项目、指标、职责或成果；信息不足时必须在 reason 中写明“需要用户补充”。
+每条建议必须使用当前简历摘要里真实存在的 itemId、moduleId、rowId、elementId。
+每条建议必须能写回现有 target，禁止返回无法定位到现有 ID 的建议。
+before 必须逐字等于 target 当前原文，禁止改写、摘录、省略、合并或标准化 before。
+after 是准备写回 target 的替换内容；不能为了贴合 JD 编造项目、公司、职责或指标。
 输出必须是严格 JSON，不要输出 Markdown、代码块或解释文本。`
 
 // 此处填写生成候选内容提示词
@@ -176,6 +199,7 @@ const GENERATE_CANDIDATE_PROMPT = `你是专业中文简历候选内容生成助
 每个候选内容都必须通过 suggestions 返回，并使用 target.type = "moduleContent" 指向对应 moduleId。
 before 必须逐字等于目标模块当前完整文本；空模块使用空字符串。
 generatedSections 必须同步返回四个模块对应的候选内容，便于前端在 AI 分析结果中展示。
+候选内容可以为空字符串，或明确写“需要用户补充：...”，但不能编造项目、公司、职责或指标。
 如果某个模块信息不足，after 中写“需要用户补充：...”并在 reason 中说明缺少的信息。
 输出必须是严格 JSON，不要输出 Markdown、代码块或解释文本。`
 
@@ -190,6 +214,25 @@ function buildAnalyzeUserPrompt(request: AiResumeRequest, summary: ResumeSummary
     JSON.stringify(summary, null, 2),
     "返回 JSON schema：",
     JSON.stringify(ANALYZE_RESPONSE_SCHEMA, null, 2),
+    "完整示例 JSON：",
+    JSON.stringify(ANALYZE_RESPONSE_EXAMPLE, null, 2),
+  ].join("\n\n")
+}
+
+function buildOptimizeUserPrompt(request: AiResumeRequest, summary: ResumeSummary): string {
+  return [
+    `目标岗位：${request.targetRole || summary.targetRole || "未填写"}`,
+    `优化范围：${request.sections.join(", ")}`,
+    "Job Description：",
+    request.jobDescription,
+    "用户补充信息：",
+    request.extraInfo || "无",
+    "当前简历摘要（含可写回 ID）：",
+    JSON.stringify(summary, null, 2),
+    "返回 JSON schema：",
+    JSON.stringify(OPTIMIZE_RESPONSE_SCHEMA, null, 2),
+    "完整示例 JSON：",
+    JSON.stringify(OPTIMIZE_RESPONSE_EXAMPLE, null, 2),
   ].join("\n\n")
 }
 
@@ -206,6 +249,8 @@ function buildGenerateUserPrompt(request: AiResumeRequest, summary: ResumeSummar
     JSON.stringify(summary, null, 2),
     "返回 JSON schema：",
     JSON.stringify(GENERATE_RESPONSE_SCHEMA, null, 2),
+    "完整示例 JSON：",
+    JSON.stringify(GENERATE_RESPONSE_EXAMPLE, null, 2),
   ].join("\n\n")
 }
 
