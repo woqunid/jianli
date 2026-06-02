@@ -18,6 +18,12 @@ interface AiResumeAssistantProps {
 }
 
 const DEFAULT_SECTIONS: readonly AiResumeSection[] = ["jdAnalysis", "projects", "skills", "proofread"]
+const EMPTY_RESULTS: Readonly<Record<AiResumeAction, AiResumeResponse | null>> = {
+  analyze: null,
+  optimize: null,
+  generate: null,
+  proofread: null,
+}
 
 export default function AiResumeAssistant({ resumeData, onApplyResumeData }: AiResumeAssistantProps) {
   const { toast } = useToast()
@@ -25,16 +31,20 @@ export default function AiResumeAssistant({ resumeData, onApplyResumeData }: AiR
   const [action, setAction] = useState<AiResumeAction>("optimize")
   const [extraInfo, setExtraInfo] = useState("")
   const [jobDescription, setJobDescription] = useState("")
-  const [result, setResult] = useState<AiResumeResponse | null>(null)
+  const [results, setResults] = useState(EMPTY_RESULTS)
   const [sections, setSections] = useState(DEFAULT_SECTIONS)
   const [targetRole, setTargetRole] = useState(defaultRole)
-  const [isLoading, setIsLoading] = useState(false)
+  const [loadingActions, setLoadingActions] = useState<ReadonlySet<AiResumeAction>>(new Set())
   const [isOpen, setIsOpen] = useState(false)
+  const activeResult = results[action]
+  const isLoading = loadingActions.has(action)
 
   const submit = async () => {
+    const currentAction = action
+    if (loadingActions.has(currentAction)) return
     const role = targetRole.trim() || findTargetRole(resumeData)
     const jd = jobDescription.trim()
-    const errors = collectAiResumeInputErrors({ action, extraInfo, jobDescription: jd, resumeData, targetRole: role })
+    const errors = collectAiResumeInputErrors({ action: currentAction, extraInfo, jobDescription: jd, resumeData, targetRole: role })
     if (errors.length > 0) {
       toast({ title: "无法生成 AI 建议", description: errors.join("；"), variant: "destructive" })
       return
@@ -43,16 +53,27 @@ export default function AiResumeAssistant({ resumeData, onApplyResumeData }: AiR
       toast({ title: "无法生成 AI 建议", description: "请至少选择一个优化范围", variant: "destructive" })
       return
     }
-    setIsLoading(true)
+    setLoadingActions((prev) => new Set(prev).add(currentAction))
     try {
-      const response = await requestAiResume({ action, extraInfo, jobDescription: jd, resumeData, sections, targetRole: role })
-      setResult(response)
+      const response = await requestAiResume({
+        action: currentAction,
+        extraInfo,
+        jobDescription: jd,
+        resumeData,
+        sections,
+        targetRole: role,
+      })
+      setResults((prev) => ({ ...prev, [currentAction]: response }))
       toast({ title: "AI 优化完成", description: `生成 ${response.suggestions.length} 条建议` })
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
       toast({ title: "AI 优化失败", description: message, variant: "destructive" })
     } finally {
-      setIsLoading(false)
+      setLoadingActions((prev) => {
+        const next = new Set(prev)
+        next.delete(currentAction)
+        return next
+      })
     }
   }
 
@@ -108,7 +129,7 @@ export default function AiResumeAssistant({ resumeData, onApplyResumeData }: AiR
             />
             {isLoading ? "生成中" : readSubmitLabel(action)}
           </Button>
-          <AiSuggestionPanel result={result} isLoading={isLoading} onApply={apply} onRegenerate={submit} />
+          <AiSuggestionPanel result={activeResult} isLoading={isLoading} onApply={apply} onRegenerate={submit} />
         </div>
       </SheetContent>
     </Sheet>
