@@ -19,7 +19,7 @@ export async function createAiResumeSuggestions(request: AiResumeRequest): Promi
     temperature: RESUME_TEMPERATURE,
     maxTokens: RESUME_MAX_TOKENS,
   })
-  const response = parseAiResumeResponse(result.text)
+  const response = parseAiResumeResponse(result.text, request.action)
   validateAiResumeResponse(request, response)
   return response
 }

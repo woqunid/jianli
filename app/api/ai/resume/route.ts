@@ -31,6 +31,11 @@ export async function POST(req: Request) {
   } catch (error) {
     const status = error instanceof AiProviderError ? error.status : HTTP_STATUS_INTERNAL_ERROR
     const message = error instanceof Error ? error.message : String(error)
+    console.error("[api/ai/resume] AI 简历处理失败", {
+      action: request.action,
+      status,
+      message,
+    })
     return NextResponse.json({ error: message }, { status })
   }
 }

@@ -60,9 +60,12 @@ export function parseAiResumeRequest(body: unknown): AiResumeRequest {
   }
 }
 
-export function parseAiResumeResponse(text: string): AiResumeResponse {
+export function parseAiResumeResponse(text: string, action?: AiResumeAction): AiResumeResponse {
   const data = parseJson(text)
   const input = requireRecord(data, "AI response")
+  if (action === "analyze") {
+    return readAnalyzeResponse(input)
+  }
   const suggestions = requireArray(input.suggestions, "suggestions").map(readSuggestion)
   return {
     summary: requireString(input.summary, "summary"),
@@ -71,6 +74,16 @@ export function parseAiResumeResponse(text: string): AiResumeResponse {
     missingKeywords: readStringArray(input.missingKeywords, "missingKeywords"),
     generatedSections: readOptionalGeneratedSections(input.generatedSections),
     suggestions,
+  }
+}
+
+function readAnalyzeResponse(input: Record<string, unknown>): AiResumeResponse {
+  return {
+    summary: requireString(input.summary, "summary"),
+    matchScore: readOptionalNumber(input.matchScore, "matchScore"),
+    matchedKeywords: readStringArray(input.matchedKeywords, "matchedKeywords"),
+    missingKeywords: readStringArray(input.missingKeywords, "missingKeywords"),
+    suggestions: [],
   }
 }
 

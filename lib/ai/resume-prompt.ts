@@ -70,7 +70,6 @@ const ANALYZE_RESPONSE_SCHEMA = {
   matchScore: EXAMPLE_MATCH_SCORE,
   matchedKeywords: ["已匹配的 JD 能力或关键词"],
   missingKeywords: ["尚未体现或证据不足的 JD 能力或关键词"],
-  suggestions: RESPONSE_SCHEMA.suggestions,
 }
 
 const GENERATE_RESPONSE_SCHEMA = {
@@ -164,8 +163,7 @@ const ANALYZE_MATCH_PROMPT = `你是专业中文简历岗位匹配度分析助�
 matchScore 必须是 0 到 100 的整数，表示当前简历与 JD 的匹配度。
 matchedKeywords 必须列出简历中已有证据支撑的匹配点。
 missingKeywords 必须列出 JD 要求中当前简历未体现、证据不足或表达薄弱的点。
-suggestions 只输出“不匹配内容优化建议”，每条建议必须指向输入摘要中真实存在的可写回 ID。
-建议的 after 只能基于当前简历、JD 和用户补充信息改写；信息不足时必须在 reason 中写明“需要用户补充”。
+分析匹配度是只读分析，不要返回 suggestions 字段，也不要输出可写回改写内容。
 输出必须是严格 JSON，不要输出 Markdown、代码块或解释文本。`
 
 // 此处填写生成候选内容提示词

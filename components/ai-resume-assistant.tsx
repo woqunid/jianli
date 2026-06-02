@@ -64,7 +64,7 @@ export default function AiResumeAssistant({ resumeData, onApplyResumeData }: AiR
         targetRole: role,
       })
       setResults((prev) => ({ ...prev, [currentAction]: response }))
-      toast({ title: "AI 优化完成", description: `生成 ${response.suggestions.length} 条建议` })
+      toast({ title: readSuccessTitle(currentAction), description: readSuccessDescription(currentAction, response) })
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
       toast({ title: "AI 优化失败", description: message, variant: "destructive" })
@@ -181,4 +181,15 @@ function readSubmitLabel(action: AiResumeAction): string {
   if (action === "analyze") return "分析匹配度"
   if (action === "generate") return "生成候选内容"
   return "生成 AI 建议"
+}
+
+function readSuccessTitle(action: AiResumeAction): string {
+  return action === "analyze" ? "匹配度分析完成" : "AI 优化完成"
+}
+
+function readSuccessDescription(action: AiResumeAction, response: AiResumeResponse): string {
+  if (action === "analyze") {
+    return response.matchScore === undefined ? "已生成分析结果" : `匹配度 ${response.matchScore}%`
+  }
+  return `生成 ${response.suggestions.length} 条建议`
 }
