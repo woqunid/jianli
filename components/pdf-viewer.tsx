@@ -56,6 +56,35 @@ async function generateServerPdf(resumeData: ResumeData): Promise<Blob> {
   return await res.blob();
 }
 
+async function openServerPdfInBrowser(resumeData: ResumeData, filename: string): Promise<void> {
+  const res = await fetch(`/api/pdf/${filename}`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ resumeData }),
+  });
+  if (!res.ok) {
+    const detail = await readErrorDetail(res);
+    throw new Error(`Failed to generate PDF (${res.status}). ${detail}`);
+  }
+  if (!res.url) {
+    throw new Error("PDF 生成成功但缺少可打开的地址");
+  }
+  window.location.assign(res.url);
+}
+
+async function readErrorDetail(res: Response): Promise<string> {
+  const ct = res.headers.get("content-type") || "";
+  try {
+    if (ct.includes("application/json")) {
+      const data = await res.json();
+      return data?.error ? String(data.error) : JSON.stringify(data);
+    }
+    return await res.text();
+  } catch (error) {
+    return error instanceof Error ? error.message : String(error);
+  }
+}
+
 export type Mode = "loading" | "server" | "fallback";
 
 export function PDFViewer({
@@ -136,31 +165,22 @@ export function PDFViewer({
         return;
       }
 
-      // 在外部容器模式下，直接通过表单 POST 跳转到 /api/pdf
+      // 外部容器模式下保留 React 控制权，服务端失败时可切到打印降级。
       if (renderNotice === "external") {
-        if (!mounted) return;
-        setMode("server");
-        onModeChange?.("server");
-        // 延迟一个宏任务，保证 spinner 先渲染
-        setTimeout(() => {
-          try {
-            const form = document.createElement("form");
-            form.method = "POST";
-            const parsed: ResumeData = JSON.parse(resumeKey);
-            const targetName = serverFilename || generatePdfFilename(parsed.title || "");
-            form.action = `/api/pdf/${targetName}`;
-            form.style.display = "none";
-            const textarea = document.createElement("textarea");
-            textarea.name = "resumeData";
-            textarea.value = JSON.stringify(parsed);
-            form.appendChild(textarea);
-            document.body.appendChild(form);
-            form.submit();
-            // 提交后页面将导航至浏览器内置 PDF 查看器
-          } catch (e) {
-            console.error(e);
-          }
-        }, 0);
+        try {
+          if (!mounted) return;
+          setMode("server");
+          onModeChange?.("server");
+          const parsed: ResumeData = JSON.parse(resumeKey);
+          const targetName = serverFilename || generatePdfFilename(parsed.title || "");
+          await openServerPdfInBrowser(parsed, targetName);
+        } catch (e) {
+          console.error(e);
+          if (!mounted) return;
+          setError(e instanceof Error ? e.message : String(e));
+          setMode("fallback");
+          onModeChange?.("fallback");
+        }
         return;
       }
 

@@ -282,6 +282,12 @@ export function ExportButton({
 
   const exportAsPDF = () => {
     const filename = generatePdfFilename(resumeData.title || "");
+    try {
+      sessionStorage.setItem("resumeData", JSON.stringify(resumeData));
+    } catch (error) {
+      console.error("写入 PDF 导出数据失败:", error);
+    }
+
     const childWindow = window.open(`/pdf/preview/${filename}`, '_blank');
     if (!childWindow) {
       console.error('Failed to open popup window');
