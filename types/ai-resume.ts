@@ -71,6 +71,7 @@ export interface AiResumeResponse {
   readonly matchScore?: number
   readonly matchedKeywords: readonly string[]
   readonly missingKeywords: readonly string[]
+  readonly improvementDirections?: readonly string[]
   readonly generatedSections?: readonly AiGeneratedSection[]
   readonly suggestions: readonly AiResumeSuggestion[]
 }

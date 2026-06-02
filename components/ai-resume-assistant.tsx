@@ -129,7 +129,13 @@ export default function AiResumeAssistant({ resumeData, onApplyResumeData }: AiR
             />
             {isLoading ? "生成中" : readSubmitLabel(action)}
           </Button>
-          <AiSuggestionPanel result={activeResult} isLoading={isLoading} onApply={apply} onRegenerate={submit} />
+          <AiSuggestionPanel
+            action={action}
+            result={activeResult}
+            isLoading={isLoading}
+            onApply={apply}
+            onRegenerate={submit}
+          />
         </div>
       </SheetContent>
     </Sheet>

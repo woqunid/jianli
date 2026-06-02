@@ -22,6 +22,7 @@ const FIELD_NAMES: Readonly<Record<string, string>> = {
   matchedKeywords: "匹配关键词",
   matchScore: "匹配度",
   missingKeywords: "缺失关键词",
+  improvementDirections: "改进方向",
   generatedSections: "生成候选内容模块",
   "generatedSection.content": "候选内容",
   "generatedSection.section": "候选内容模块",
@@ -83,6 +84,7 @@ function readAnalyzeResponse(input: Record<string, unknown>): AiResumeResponse {
     matchScore: readOptionalNumber(input.matchScore, "matchScore"),
     matchedKeywords: readStringArray(input.matchedKeywords, "matchedKeywords"),
     missingKeywords: readStringArray(input.missingKeywords, "missingKeywords"),
+    improvementDirections: readStringArray(input.improvementDirections, "improvementDirections"),
     suggestions: [],
   }
 }

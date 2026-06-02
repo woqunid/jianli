@@ -5,10 +5,13 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/hooks/use-toast"
-import type { AiResumeResponse, AiResumeSection, AiResumeSuggestion } from "@/types/ai-resume"
+import type { AiResumeAction, AiResumeResponse, AiResumeSuggestion } from "@/types/ai-resume"
 import { Icon } from "@iconify/react"
+import AiAnalyzeResultPanel from "./ai-analyze-result-panel"
+import AiGenerateCandidatePanel from "./ai-generate-candidate-panel"
 
 interface AiSuggestionPanelProps {
+  readonly action: AiResumeAction
   readonly result: AiResumeResponse | null
   readonly isLoading: boolean
   readonly onApply: (suggestion: AiResumeSuggestion) => void
@@ -26,7 +29,28 @@ export default function AiSuggestionPanel(props: AiSuggestionPanelProps) {
   }, [props.result])
 
   if (!props.result) {
-    return <EmptyState isLoading={props.isLoading} />
+    return <EmptyState action={props.action} isLoading={props.isLoading} />
+  }
+
+  if (props.action === "analyze") {
+    return (
+      <AiAnalyzeResultPanel
+        result={props.result}
+        isLoading={props.isLoading}
+        onRegenerate={props.onRegenerate}
+      />
+    )
+  }
+
+  if (props.action === "generate") {
+    return (
+      <AiGenerateCandidatePanel
+        result={props.result}
+        isLoading={props.isLoading}
+        onApply={props.onApply}
+        onRegenerate={props.onRegenerate}
+      />
+    )
   }
 
   const apply = (suggestion: AiResumeSuggestion, index: number) => {
@@ -68,16 +92,28 @@ export default function AiSuggestionPanel(props: AiSuggestionPanelProps) {
   )
 }
 
-function EmptyState({ isLoading }: { readonly isLoading: boolean }) {
+function EmptyState({ action, isLoading }: { readonly action: AiResumeAction; readonly isLoading: boolean }) {
   return (
     <div className="rounded-lg border border-dashed bg-muted/30 p-6 text-center text-sm text-muted-foreground">
       <Icon
         icon={isLoading ? "mdi:loading" : "mdi:creation"}
         className={`mx-auto mb-2 h-7 w-7 ${isLoading ? "animate-spin" : ""}`}
       />
-      {isLoading ? "正在分析简历与 JD..." : "填写 JD 后生成匹配度分析和优化建议"}
+      {isLoading ? readLoadingText(action) : readEmptyText(action)}
     </div>
   )
+}
+
+function readLoadingText(action: AiResumeAction): string {
+  if (action === "analyze") return "正在分析简历与 JD..."
+  if (action === "generate") return "正在生成候选内容..."
+  return "正在生成优化建议..."
+}
+
+function readEmptyText(action: AiResumeAction): string {
+  if (action === "analyze") return "填写 JD 后生成匹配度分析"
+  if (action === "generate") return "填写 JD 和补充信息后生成候选内容"
+  return "填写 JD 后生成可应用优化建议"
 }
 
 function Summary({
@@ -102,7 +138,6 @@ function Summary({
       <p className="text-sm leading-6 text-muted-foreground">{result.summary}</p>
       <KeywordList label={result.matchScore === undefined ? "匹配关键词" : "匹配内容"} keywords={result.matchedKeywords} />
       <KeywordList label={result.matchScore === undefined ? "待补充关键词" : "不匹配内容"} keywords={result.missingKeywords} />
-      <GeneratedSections result={result} />
     </div>
   )
 }
@@ -125,20 +160,6 @@ function KeywordList({ label, keywords }: { readonly label: string; readonly key
         <Badge key={keyword} variant="secondary" className="text-xs">
           {keyword}
         </Badge>
-      ))}
-    </div>
-  )
-}
-
-function GeneratedSections({ result }: { readonly result: AiResumeResponse }) {
-  if (!result.generatedSections?.length) return null
-  return (
-    <div className="mt-4 space-y-3">
-      {result.generatedSections.map((section) => (
-        <div key={section.section} className="rounded-md border bg-muted/30 p-3">
-          <div className="mb-1 text-xs font-medium text-muted-foreground">{readSectionLabel(section.section)}</div>
-          <div className="text-sm leading-6 whitespace-pre-wrap">{section.content}</div>
-        </div>
       ))}
     </div>
   )
@@ -184,20 +205,6 @@ function SuggestionItem({
       </div>
     </div>
   )
-}
-
-function readSectionLabel(section: AiResumeSection): string {
-  const labels: Readonly<Record<AiResumeSection, string>> = {
-    jobIntention: "求职意向",
-    skills: "专业技能",
-    experience: "工作经历",
-    projects: "项目经历",
-    careerSkills: "职业技能",
-    summary: "个人总结",
-    proofread: "全文纠错",
-    jdAnalysis: "JD 匹配度分析",
-  }
-  return labels[section]
 }
 
 function BeforeAfter({ suggestion }: { readonly suggestion: AiResumeSuggestion }) {
