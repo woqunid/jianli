@@ -20,6 +20,12 @@ interface AiJdDialogProps {
   readonly onTargetRoleChange: (value: string) => void
 }
 
+const PLACEHOLDER_CLASS = "placeholder:text-muted-foreground/45"
+const TARGET_ROLE_EXAMPLE = "如：前端开发工程师"
+const JD_PLACEHOLDER = "粘贴目标岗位 JD 原文"
+const EXTRA_INFO_PLACEHOLDER =
+  "例如：我主要负责 React 页面开发、简历导出、PDF 生成优化；项目日活约 200 人；不要编造管理经验。"
+
 const SECTION_OPTIONS: readonly { value: AiResumeSection; label: string }[] = [
   { value: "jobIntention", label: "求职意向" },
   { value: "skills", label: "专业技能" },
@@ -68,7 +74,8 @@ export default function AiJdDialog(props: AiJdDialogProps) {
           id="ai-target-role"
           value={props.targetRole}
           onChange={(event) => props.onTargetRoleChange(event.target.value)}
-          placeholder="如：前端开发工程师"
+          placeholder={TARGET_ROLE_EXAMPLE}
+          className={props.targetRole === TARGET_ROLE_EXAMPLE ? "text-muted-foreground/55" : PLACEHOLDER_CLASS}
         />
       </div>
 
@@ -78,8 +85,8 @@ export default function AiJdDialog(props: AiJdDialogProps) {
           id="ai-jd"
           value={props.jobDescription}
           onChange={(event) => props.onJobDescriptionChange(event.target.value)}
-          placeholder="粘贴目标岗位 JD 原文"
-          className="min-h-36 resize-y"
+          placeholder={JD_PLACEHOLDER}
+          className={`min-h-36 resize-y ${PLACEHOLDER_CLASS}`}
         />
       </div>
 
@@ -89,8 +96,8 @@ export default function AiJdDialog(props: AiJdDialogProps) {
           id="ai-extra-info"
           value={props.extraInfo}
           onChange={(event) => props.onExtraInfoChange(event.target.value)}
-          placeholder="例如：我主要负责 React 页面开发、简历导出、PDF 生成优化；项目日活约 200 人；不要编造管理经验。"
-          className="min-h-24 resize-y"
+          placeholder={EXTRA_INFO_PLACEHOLDER}
+          className={`min-h-24 resize-y ${PLACEHOLDER_CLASS}`}
         />
       </div>
 
