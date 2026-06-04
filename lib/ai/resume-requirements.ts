@@ -27,7 +27,6 @@ export const REQUIRED_AI_RESUME_MODULES: readonly RequiredResumeModule[] = [
   { section: "skills", label: "专业技能", aliases: ["专业技能"] },
   { section: "experience", label: "工作经历", aliases: ["工作经历", "工作经验"] },
   { section: "projects", label: "项目经历", aliases: ["项目经历", "项目经验"] },
-  { section: "careerSkills", label: "职业技能", aliases: ["职业技能"] },
 ]
 
 export function collectAiResumeInputErrors(input: AiResumeInput): readonly string[] {

@@ -31,7 +31,6 @@ const SECTION_OPTIONS: readonly { value: AiResumeSection; label: string }[] = [
   { value: "skills", label: "专业技能" },
   { value: "experience", label: "工作经历" },
   { value: "projects", label: "项目经历" },
-  { value: "careerSkills", label: "职业技能" },
   { value: "summary", label: "个人总结" },
   { value: "proofread", label: "全文纠错" },
   { value: "jdAnalysis", label: "JD 匹配度分析" },
@@ -41,7 +40,7 @@ const ACTION_OPTIONS: readonly ActionOption[] = [
   {
     value: "analyze",
     label: "分析匹配度",
-    required: "Job Description；专业技能、工作经历、项目经历、职业技能均需有真实内容",
+    required: "Job Description；专业技能、工作经历、项目经历均需有真实内容",
     description: "分析当前简历与目标岗位 JD 的匹配度、匹配点、不匹配点，并给出针对性优化建议。",
   },
   {
@@ -53,8 +52,8 @@ const ACTION_OPTIONS: readonly ActionOption[] = [
   {
     value: "generate",
     label: "生成候选内容",
-    required: "目标岗位名称、Job Description、用户补充信息；需存在四个目标简历模块",
-    description: "根据岗位要求和用户补充信息，为专业技能、工作经历、项目经历、职业技能生成候选内容。",
+    required: "目标岗位名称、Job Description、用户补充信息；专业技能、工作经历、项目经历模块可为空但需存在",
+    description: "根据 JD 和用户补充信息生成可写入草稿，缺失事实会标注待补充，不要求先填写模块内容。",
   },
 ]
 

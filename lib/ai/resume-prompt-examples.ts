@@ -32,29 +32,24 @@ export const OPTIMIZE_RESPONSE_EXAMPLE = {
 }
 
 export const GENERATE_RESPONSE_EXAMPLE = {
-  summary: "基于 JD 和用户补充信息生成候选模块内容，缺失真实经历的部分已标注需要用户补充。",
+  summary: "基于 JD 和用户补充信息生成候选模块内容，缺失真实事实的部分已标注待补充。",
   matchedKeywords: ["Next.js", "组件化", "工程化"],
   missingKeywords: ["性能指标"],
   generatedSections: [
     {
       section: "skills",
       title: "专业技能",
-      content: "熟悉 Next.js、React、TypeScript 与组件化开发；性能指标需要用户补充。",
+      content: "熟悉 React、Next.js、TypeScript 与组件化开发，具备页面开发、简历导出和 PDF 生成优化经验；【待补充：性能优化指标】。",
     },
     {
       section: "experience",
       title: "工作经历",
-      content: "需要用户补充：真实公司、岗位职责、业务场景和可验证成果。",
+      content: "【待补充：公司名称】 | 前端开发工程师 | 【待补充：任职时间】\n负责 React 页面开发、简历导出与 PDF 生成优化，围绕 JD 要求持续提升页面可用性和交付效率；【待补充：业务规模或结果指标】。",
     },
     {
       section: "projects",
       title: "项目经历",
-      content: "需要用户补充：真实项目名称、个人职责、技术难点和结果指标。",
-    },
-    {
-      section: "careerSkills",
-      title: "职业技能",
-      content: "具备前端工程化、跨团队沟通和问题定位能力；具体案例需要用户补充。",
+      content: "【待补充：项目名称】\n基于 React 和 TypeScript 参与核心页面开发，负责简历导出、PDF 生成链路优化和交互体验完善；【待补充：技术难点、优化前后指标】。",
     },
   ],
   suggestions: [
