@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, type FormEvent } from "react"
+import { useMemo, type FormEvent, type KeyboardEvent } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -118,6 +118,7 @@ function MessageForm({
       <Textarea
         value={input}
         onChange={(event) => actions.updateInput(event.target.value)}
+        onKeyDown={(event) => handleMessageKeyDown(event, actions.submit)}
         placeholder="输入想优化、补充或生成的内容"
         className="min-h-20 resize-none"
       />
@@ -203,6 +204,12 @@ function ErrorPanel({ message }: { readonly message: string }) {
 }
 
 function handleSubmitEvent(event: FormEvent<HTMLFormElement>, submit: () => void): void {
+  event.preventDefault()
+  submit()
+}
+
+function handleMessageKeyDown(event: KeyboardEvent<HTMLTextAreaElement>, submit: () => void): void {
+  if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing) return
   event.preventDefault()
   submit()
 }
