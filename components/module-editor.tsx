@@ -17,6 +17,7 @@ import {
 import { Icon } from "@iconify/react"
 import type { ResumeModule, ModuleContentRow, ModuleContentElement } from "@/types/resume"
 import IconPicker from "./icon-picker"
+import ModuleAiDialog from "./module-ai-dialog"
 import FloatingActionBar from "./floating-action-bar"
 import RichTextInput from "./rich-text-input"
 import TagInput from "./tag-input"
@@ -319,6 +320,7 @@ function ModuleItem({
               icon={isExpanded ? "mdi:chevron-up" : "mdi:chevron-down"}
               className="w-4 h-4 text-muted-foreground ml-auto"
             />
+            <ModuleAiDialog module={module} onApplyRows={(rows) => onUpdate({ rows })} />
             <Button
               size="sm"
               variant="ghost"
