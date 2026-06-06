@@ -19,17 +19,17 @@ interface InterviewAdviceAssistantProps {
 export default function InterviewAdviceAssistant({ resumeData }: InterviewAdviceAssistantProps) {
   const { toast } = useToast()
   const resumeStamp = resumeData.updatedAt
-  const defaultRole = useMemo(() => findTargetRole(resumeData), [resumeData])
+  const resumeTargetRole = useMemo(() => findTargetRole(resumeData), [resumeData])
   const autoRequestedFor = useRef("")
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [lastGeneratedStamp, setLastGeneratedStamp] = useState("")
   const [result, setResult] = useState<AiInterviewAdviceResponse | null>(null)
-  const [targetRole, setTargetRole] = useState(defaultRole)
+  const [targetRole, setTargetRole] = useState(resumeTargetRole)
 
   const submit = useCallback(async () => {
     if (isLoading) return
-    const role = targetRole.trim() || findTargetRole(resumeData)
+    const role = targetRole.trim() || resumeTargetRole
     setIsLoading(true)
     try {
       const response = await requestInterviewAdvice({ resumeData, targetRole: role })
@@ -42,7 +42,7 @@ export default function InterviewAdviceAssistant({ resumeData }: InterviewAdvice
     } finally {
       setIsLoading(false)
     }
-  }, [isLoading, resumeData, resumeStamp, targetRole, toast])
+  }, [isLoading, resumeData, resumeStamp, resumeTargetRole, targetRole, toast])
 
   useEffect(() => {
     if (!isOpen || isLoading) return
@@ -54,7 +54,7 @@ export default function InterviewAdviceAssistant({ resumeData }: InterviewAdvice
 
   const updateOpen = (open: boolean) => {
     setIsOpen(open)
-    if (open) setTargetRole(findTargetRole(resumeData))
+    if (open) setTargetRole(resumeTargetRole)
   }
 
   const regenerate = () => {
@@ -88,6 +88,9 @@ export default function InterviewAdviceAssistant({ resumeData }: InterviewAdvice
               onChange={(event) => setTargetRole(event.target.value)}
               placeholder="例如：产品经理、销售顾问、前端工程师"
             />
+            <p className="text-xs leading-5 text-muted-foreground">
+              {readTargetRoleHint(resumeTargetRole)}
+            </p>
           </div>
           <Button onClick={regenerate} disabled={isLoading} className="w-full gap-2">
             <Icon
@@ -106,6 +109,13 @@ export default function InterviewAdviceAssistant({ resumeData }: InterviewAdvice
 function findTargetRole(resumeData: ResumeData): string {
   const items = resumeData.jobIntentionSection?.items ?? []
   return items.find((item) => item.type === "position")?.value ?? ""
+}
+
+function readTargetRoleHint(resumeTargetRole: string): string {
+  if (resumeTargetRole.trim()) {
+    return "已从简历求职意向自动填写；修改后重新生成会按新岗位生成。"
+  }
+  return "填写目标岗位后，生成内容会按该岗位调整。"
 }
 
 function requestInterviewAdvice(input: {
