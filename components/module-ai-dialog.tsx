@@ -14,6 +14,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { readModulePlainText } from "@/lib/ai/resume-requirements"
 import type { ResumeModule } from "@/types/resume"
 import { Icon } from "@iconify/react"
+import ModuleAiAppliedPreview from "./module-ai-applied-preview"
 import {
   useModuleAiConversation,
   type ModuleAiConversationActions,
@@ -33,7 +34,10 @@ export default function ModuleAiDialog(props: ModuleAiDialogProps) {
   return (
     <Dialog open={state.open} onOpenChange={actions.updateOpen}>
       <ModuleAiTrigger />
-      <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-xl">
+      <DialogContent
+        onClick={(event) => event.stopPropagation()}
+        className="gap-0 overflow-hidden p-0 sm:max-w-xl"
+      >
         <DialogHeader className="border-b px-4 py-3">
           <DialogTitle className="flex items-center gap-2 text-base">
             <Icon icon="mdi:robot-outline" className="h-4 w-4 text-primary" />
@@ -160,6 +164,7 @@ function MessageBubble({
     <div className={`flex ${isAssistant ? "justify-start" : "justify-end"}`}>
       <div className={`max-w-[86%] rounded-lg px-3 py-2 text-sm ${isAssistant ? "bg-muted" : "bg-primary text-primary-foreground"}`}>
         <div className="whitespace-pre-wrap leading-relaxed">{message.content}</div>
+        {isAssistant && message.rows?.length ? <ModuleAiAppliedPreview applied={message.applied} rows={message.rows} /> : null}
         {isAssistant ? <ApplyButton message={message} onApply={onApply} /> : null}
       </div>
     </div>
