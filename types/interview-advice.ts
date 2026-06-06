@@ -2,7 +2,6 @@ import type { ResumeData } from "@/types/resume"
 
 export interface AiInterviewAdviceRequest {
   readonly resumeData: ResumeData
-  readonly targetRole: string
 }
 
 export interface AiInterviewAdviceResponse {

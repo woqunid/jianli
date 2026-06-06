@@ -10,10 +10,10 @@ const INTERVIEW_TEMPERATURE = 0.25
 export async function createAiInterviewAdvice(
   request: AiInterviewAdviceRequest,
 ): Promise<AiInterviewAdviceResponse> {
-  const summary = summarizeResume(request.resumeData, request.targetRole)
+  const summary = summarizeResume(request.resumeData, "")
   ensureResumeHasContent(summary)
   const result = await createAiChatCompletion({
-    messages: buildInterviewAdvicePrompt(request, summary),
+    messages: buildInterviewAdvicePrompt(summary),
     temperature: INTERVIEW_TEMPERATURE,
     maxTokens: INTERVIEW_MAX_TOKENS,
   })

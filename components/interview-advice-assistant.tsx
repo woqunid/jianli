@@ -1,9 +1,7 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { useToast } from "@/hooks/use-toast"
 import { requestJson } from "@/lib/fetch-json"
@@ -19,20 +17,17 @@ interface InterviewAdviceAssistantProps {
 export default function InterviewAdviceAssistant({ resumeData }: InterviewAdviceAssistantProps) {
   const { toast } = useToast()
   const resumeStamp = resumeData.updatedAt
-  const resumeTargetRole = useMemo(() => findTargetRole(resumeData), [resumeData])
   const autoRequestedFor = useRef("")
   const [isOpen, setIsOpen] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [lastGeneratedStamp, setLastGeneratedStamp] = useState("")
   const [result, setResult] = useState<AiInterviewAdviceResponse | null>(null)
-  const [targetRole, setTargetRole] = useState(resumeTargetRole)
 
   const submit = useCallback(async () => {
     if (isLoading) return
-    const role = targetRole.trim() || resumeTargetRole
     setIsLoading(true)
     try {
-      const response = await requestInterviewAdvice({ resumeData, targetRole: role })
+      const response = await requestInterviewAdvice({ resumeData })
       setResult(response)
       setLastGeneratedStamp(resumeStamp)
       toast({ title: "面试建议已生成", description: `生成 ${response.questions.length} 个可能面试问题` })
@@ -42,7 +37,7 @@ export default function InterviewAdviceAssistant({ resumeData }: InterviewAdvice
     } finally {
       setIsLoading(false)
     }
-  }, [isLoading, resumeData, resumeStamp, resumeTargetRole, targetRole, toast])
+  }, [isLoading, resumeData, resumeStamp, toast])
 
   useEffect(() => {
     if (!isOpen || isLoading) return
@@ -54,7 +49,6 @@ export default function InterviewAdviceAssistant({ resumeData }: InterviewAdvice
 
   const updateOpen = (open: boolean) => {
     setIsOpen(open)
-    if (open) setTargetRole(resumeTargetRole)
   }
 
   const regenerate = () => {
@@ -80,18 +74,6 @@ export default function InterviewAdviceAssistant({ resumeData }: InterviewAdvice
           <SheetDescription>根据当前简历生成准备建议、自我介绍和可能面试问题。</SheetDescription>
         </SheetHeader>
         <div className="space-y-5 px-4 pb-6">
-          <div className="space-y-2">
-            <Label htmlFor="interview-target-role">目标岗位</Label>
-            <Input
-              id="interview-target-role"
-              value={targetRole}
-              onChange={(event) => setTargetRole(event.target.value)}
-              placeholder="例如：产品经理、销售顾问、前端工程师"
-            />
-            <p className="text-xs leading-5 text-muted-foreground">
-              {readTargetRoleHint(resumeTargetRole)}
-            </p>
-          </div>
           <Button onClick={regenerate} disabled={isLoading} className="w-full gap-2">
             <Icon
               icon={isLoading ? "mdi:loading" : "mdi:briefcase-search"}
@@ -106,21 +88,8 @@ export default function InterviewAdviceAssistant({ resumeData }: InterviewAdvice
   )
 }
 
-function findTargetRole(resumeData: ResumeData): string {
-  const items = resumeData.jobIntentionSection?.items ?? []
-  return items.find((item) => item.type === "position")?.value ?? ""
-}
-
-function readTargetRoleHint(resumeTargetRole: string): string {
-  if (resumeTargetRole.trim()) {
-    return "已从简历求职意向自动填写；修改后重新生成会按新岗位生成。"
-  }
-  return "填写目标岗位后，生成内容会按该岗位调整。"
-}
-
 function requestInterviewAdvice(input: {
   readonly resumeData: ResumeData
-  readonly targetRole: string
 }): Promise<AiInterviewAdviceResponse> {
   return requestJson<AiInterviewAdviceResponse>("/api/ai/interview-advice", input)
 }

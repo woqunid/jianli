@@ -1,6 +1,5 @@
 import type { AiMessage } from "@/lib/ai/types"
 import type { ResumeSummary } from "@/lib/ai/resume-summary"
-import type { AiInterviewAdviceRequest } from "@/types/interview-advice"
 
 const INTERVIEW_RESPONSE_SCHEMA = {
   overview: "基于整份简历得到的面试准备总览",
@@ -46,19 +45,16 @@ const SYSTEM_PROMPT = `
 顶层字段固定为：overview、workNature、adviceSections、selfIntroduction、questions。
 不要输出 Markdown、代码块、解释文本、标题或寒暄。`
 
-export function buildInterviewAdvicePrompt(
-  request: AiInterviewAdviceRequest,
-  summary: ResumeSummary,
-): readonly AiMessage[] {
+export function buildInterviewAdvicePrompt(summary: ResumeSummary): readonly AiMessage[] {
   return [
     { role: "system", content: SYSTEM_PROMPT },
-    { role: "user", content: buildUserPrompt(request, summary) },
+    { role: "user", content: buildUserPrompt(summary) },
   ]
 }
 
-function buildUserPrompt(request: AiInterviewAdviceRequest, summary: ResumeSummary): string {
+function buildUserPrompt(summary: ResumeSummary): string {
   return [
-    `目标岗位：${request.targetRole || summary.targetRole || "未填写"}`,
+    `目标岗位（来自简历求职意向）：${summary.targetRole || "未填写"}`,
     "当前简历摘要：",
     JSON.stringify(summary, null, 2),
     "返回 JSON schema：",

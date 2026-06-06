@@ -24,7 +24,6 @@ const FIELD_NAMES: Readonly<Record<string, string>> = {
   resumeBasis: "简历依据",
   resumeData: "简历数据",
   selfIntroduction: "自我介绍",
-  targetRole: "目标岗位",
   title: "标题",
   workNature: "工作性质",
 }
@@ -33,7 +32,6 @@ export function parseInterviewAdviceRequest(body: unknown): AiInterviewAdviceReq
   const input = requireRecord(body, "request")
   return {
     resumeData: requireRecord(input.resumeData, "resumeData") as unknown as AiInterviewAdviceRequest["resumeData"],
-    targetRole: requireString(input.targetRole, "targetRole"),
   }
 }
 
