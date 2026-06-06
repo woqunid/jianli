@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, type FormEvent, type KeyboardEvent } from "react"
+import { useMemo, type FormEvent, type KeyboardEvent, type PointerEvent } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -15,6 +15,7 @@ import { readModulePlainText } from "@/lib/ai/resume-requirements"
 import type { ResumeModule } from "@/types/resume"
 import { Icon } from "@iconify/react"
 import ModuleAiAppliedPreview from "./module-ai-applied-preview"
+import { useModuleAiWindow } from "./use-module-ai-window"
 import {
   useModuleAiConversation,
   type ModuleAiConversationActions,
@@ -30,15 +31,20 @@ interface ModuleAiDialogProps {
 export default function ModuleAiDialog(props: ModuleAiDialogProps) {
   const moduleText = useMemo(() => readModulePlainText(props.module), [props.module])
   const { actions, state } = useModuleAiConversation(props)
+  const windowState = useModuleAiWindow(state.open)
 
   return (
     <Dialog open={state.open} onOpenChange={actions.updateOpen}>
       <ModuleAiTrigger />
       <DialogContent
         onClick={(event) => event.stopPropagation()}
-        className="gap-0 overflow-hidden p-0 sm:max-w-xl"
+        style={windowState.style}
+        className="flex !max-w-none !translate-x-0 !translate-y-0 flex-col gap-0 overflow-hidden p-0"
       >
-        <DialogHeader className="border-b px-4 py-3">
+        <DialogHeader
+          onPointerDown={windowState.onMovePointerDown}
+          className="cursor-move select-none border-b px-4 py-3 pr-12"
+        >
           <DialogTitle className="flex items-center gap-2 text-base">
             <Icon icon="mdi:robot-outline" className="h-4 w-4 text-primary" />
             {props.module.title || "未命名模块"} AI 对话
@@ -46,6 +52,7 @@ export default function ModuleAiDialog(props: ModuleAiDialogProps) {
           <DialogDescription>关闭窗口后，本轮对话上下文会立即清空。</DialogDescription>
         </DialogHeader>
         <ModuleAiPanel actions={actions} module={props.module} moduleText={moduleText} state={state} />
+        <ResizeHandle onPointerDown={windowState.onResizePointerDown} />
       </DialogContent>
     </Dialog>
   )
@@ -79,7 +86,7 @@ function ModuleAiPanel({
   readonly state: ModuleAiConversationState
 }) {
   return (
-    <div className="flex h-[520px] max-h-[calc(82vh-96px)] flex-col">
+    <div className="flex min-h-0 flex-1 flex-col">
       <ModuleContextSummary hasContent={Boolean(moduleText)} title={module.title} />
       <ChatMessages actions={actions} hasContent={Boolean(moduleText)} state={state} />
       <MessageForm actions={actions} input={state.input} isLoading={state.isLoading} />
@@ -97,7 +104,7 @@ function ChatMessages({
   readonly state: ModuleAiConversationState
 }) {
   return (
-    <div className="flex-1 space-y-3 overflow-y-auto px-4 py-3">
+    <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-4 py-3">
       {state.messages.length === 0 ? <EmptyState hasContent={hasContent} /> : null}
       {state.messages.map((message) => (
         <MessageBubble key={message.id} message={message} onApply={actions.applyMessage} />
@@ -190,6 +197,20 @@ function ApplyButton({
       <Icon icon={message.applied ? "mdi:check" : "mdi:content-save-edit-outline"} className="h-3.5 w-3.5" />
       {message.applied ? "已应用" : "应用"}
     </Button>
+  )
+}
+
+function ResizeHandle({ onPointerDown }: { readonly onPointerDown: (event: PointerEvent<HTMLButtonElement>) => void }) {
+  return (
+    <button
+      type="button"
+      aria-label="调整 AI 对话窗口大小"
+      title="调整大小"
+      onPointerDown={onPointerDown}
+      className="absolute bottom-1 right-1 flex h-5 w-5 cursor-se-resize items-center justify-center rounded text-muted-foreground hover:bg-muted"
+    >
+      <Icon icon="mdi:resize-bottom-right" className="h-4 w-4" />
+    </button>
   )
 }
 
