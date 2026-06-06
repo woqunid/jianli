@@ -1,19 +1,8 @@
-﻿# 简历生成器
-> ⭐⭐⭐ **如果这个项目对您有帮助，请给个小星星！** 您的支持是我持续改进和添加新功能的动力。
+# 简历生成器
 
-一个灵活且功能强大的简历构建和导出工具，帮助用户快速创建、编辑和导出干净、简洁而又专业的简历，支持所见即所得。数据存储在浏览器，本地保存与管理简历更放心。
+> 基于 [resume-builder](https://github.com/magicyan418/resume-builder) 二次开发，感谢原作者的开源。
 
-## 功能特点
-
-- **用户中心**: 首页集中管理你的简历，支持检索、排序、批量选择与删除、导入/导出
-- **本地存储**: 多份简历持久化到浏览器 `localStorage`，随开随用（支持 JSON 备份还原）
-- **简历编辑**: 直观的界面，轻松编辑个人信息和简历内容
-- **模块化设计**: 支持添加、删除和重排简历模块
-- **实时预览**: 即时查看简历编辑效果
-- **PDF 导出**: 优先由服务端 Chromium 渲染同一份 HTML/CSS 生成干净 PDF；不可用时自动降级浏览器打印，并给出引导
-- **图片导出**: 支持导出为 PNG、JPG、WEBP、SVG 等图片格式
-- **富文本支持**: 支持自由设置文本格式，如字体、文字大小、颜色、对齐方式以及是否加粗、URL 链接等
-- **自适应**: 支持不同模块/布局自由组合，自动调整元素尺寸
+一个支持本地多简历管理、所见即所得编辑、AI 优化和多格式导出的简历生成工具。项目默认把简历保存在浏览器本地，适合维护多份岗位定制简历，也适合部署成一个轻量的私有简历编辑器。
 
 <p align="left">
   <a href="https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fwzdnzd%2Fresume&env=SITE_PASSWORD&project-name=resume&repository-name=resume" target="_blank" rel="noopener noreferrer"><img src="https://vercel.com/button" alt="Vercel" height="30"></a>
@@ -21,169 +10,261 @@
   <a href="https://edgeone.ai/pages/new?repository-url=https%3A%2F%2Fgithub.com%2Fwzdnzd%2Fresume&env=SITE_PASSWORD&project-name=resume&repository-name=resume" target="_blank" rel="noopener noreferrer"><img src="https://cdnstatic.tencentcs.com/edgeone/pages/deploy.svg" alt="EdgeOne Pages" height="30"></a>
 </p>
 
+## 适合用来做什么
+
+- 管理多份不同岗位、不同版本的简历。
+- 在浏览器里完成简历编辑、预览、保存和导出。
+- 根据目标岗位 JD 分析简历匹配度，并生成优化建议。
+- 为专业技能、工作经历、项目经历生成候选内容。
+- 将简历导出为 PDF、图片或 JSON 备份文件。
+- 部署为私有工具，并通过访问密码做简单保护。
+
+## 功能概览
+
+- **用户中心**：首页集中管理所有本地简历，支持搜索、排序、查看、编辑、克隆、删除、批量删除、导入和导出。
+- **本地存储**：简历保存在浏览器 `localStorage` 中，不依赖账号和数据库；重要简历可导出 JSON 备份。
+- **实时编辑预览**：支持“编辑+预览”“仅编辑”“仅预览”三种模式，修改内容后可即时查看排版效果。
+- **个人信息编辑**：支持头像、电话、邮箱、链接、图标、标签显隐、头像形状、单行/网格布局和拖拽排序。
+- **求职意向编辑**：支持工作经验、目标岗位、目标城市、期望薪资和自定义字段，可启用/关闭并调整顺序。
+- **模块化内容**：可自由创建教育背景、工作经历、项目经历、专业技能等模块，支持模块图标、模块排序、1-4 列内容行和标签行。
+- **富文本排版**：支持字体、字号、颜色、加粗、斜体、下划线、链接、代码、列表、对齐和清除格式。
+- **AI 简历助手**：支持 JD 匹配度分析、现有内容优化、候选内容生成和全文纠错。
+- **模块级 AI 对话**：每个模块都可以单独打开 AI 对话，根据当前模块内容生成或改写草稿，并一键应用。
+- **多格式导出**：支持 PDF、JSON、PNG、JPG、WEBP、SVG。
+- **服务端 PDF 优先**：优先使用服务端 Chromium 生成干净 PDF；不可用时自动切换到浏览器打印，并给出清晰提示。
+- **访问密码保护**：可通过环境变量开启页面访问密码，适合私有部署。
+
 ## 页面示例截图
+
 1. 用户中心：本地化集中管理多份简历
 ![用户中心](./docs/user-center.png)
 
-1. 编辑和预览：随时查看渲染效果
+2. 编辑和预览：随时查看渲染效果
 ![编辑和预览界面](./docs/edit-preview.png)
 
-1. 仅编辑：专注于编写
+3. 仅编辑：专注于编写
 ![仅编辑](./docs/edit-only.png)
 
-1. 仅预览：简历效果一览无余
+4. 仅预览：简历效果一览无余
 ![仅预览](./docs/preview-only.png)
 
-1. 自由布局：左对齐/居中对齐、列数调整等多个选项随心控制
+5. 自由布局：左对齐/居中对齐、列数调整等多个选项随心控制
 ![自由布局](./docs/multi-line.png)
 
-1. 多种导出方式：不同成品满足不同需求
+6. 多种导出方式：不同成品满足不同需求
 ![导出方式](./docs/export.png)
 
-1. 标签功能：为企业或项目等添加标签，让HR/面试官快速理解你
+7. 标签功能：为企业、项目或技能添加标签，让 HR/面试官快速理解重点
 ![标签添加](./docs/tags.png)
-
-## 技术栈
-
-- **前端框架**: Next.js
-- **UI组件**: Shadcn UI
-- **样式**: Tailwind CSS
-- **PDF生成**: puppeteer-core + @sparticuz/chromium（Serverless 友好）
-- **图标**: Iconify
 
 ## 快速开始
 
-### 安装依赖
+建议使用 Node.js 20+ 和 pnpm。
 
 ```bash
-# 使用pnpm安装依赖
 pnpm install
-```
-
-### 开发环境运行
-
-```bash
 pnpm dev
 ```
 
-应用将在 [http://localhost:3000](http://localhost:3000) 启动。本地已默认集成 `puppeteer-core` 与 `@sparticuz/chromium`，服务端 PDF 可直接使用；当不可用时会自动降级为浏览器打印。
+开发服务启动后访问 [http://localhost:3000](http://localhost:3000)。
 
-### 构建生产版本
+生产构建：
 
 ```bash
 pnpm build
+pnpm start
 ```
 
-## 项目结构
-```
-/
-├── app/
-│  ├── globals.css
-│  ├── layout.tsx
-│  ├── page.tsx                         # 首页：用户中心（本地简历管理）
-│  ├── edit/
-│  │  ├── new/page.tsx                  # 新建简历（可选携带 ?clone=ID 预填）
-│  │  └── [id]/page.tsx                 # 编辑本地已保存的简历
-│  ├── view/[id]/page.tsx               # 仅预览本地已保存的简历
-│  ├── pdf/preview/[filename]/page.tsx  # 在线 PDF 预览页（服务端优先，自动降级打印）
-│  ├── print/page.tsx                   # 打印专用页面（供 Chromium 渲染）
-│  ├── auth/page.tsx                    # 访问口令输入页（可选）
-│  └── api/
-│     ├── auth/route.ts                 # 认证接口（设置 Cookie）
-│     ├── image-proxy/route.ts          # 远程图片代理（用于导出防跨域）
-│     └── pdf/
-│        ├── health/route.ts            # 健康检查（尝试启动 headless 浏览器）
-│        ├── [filename]/route.ts        # 生成并缓存 PDF（POST→303→GET 下载/预览）
-│        └── route.ts                   # 直接生成并返回 PDF（Puppeteer + Chromium）
-├── components/
-│  ├── user-center.tsx                  # 用户中心（首页）
-│  ├── export-button.tsx                # 一键导出（PDF/图片/JSON）
-│  ├── resume-builder.tsx               # 简历编辑主界面
-│  ├── resume-preview.tsx               # HTML 预览（PDF 与预览同源 HTML/CSS）
-│  ├── print-content.tsx                # 打印内容容器
-│  ├── pdf-viewer.tsx                   # 自动选择：服务端 PDF 或浏览器打印
-│  └── ui/…                             # Shadcn UI 基础组件集合
-├── hooks/
-│  ├── use-mobile.ts
-│  └── use-toast.ts
-├── lib/
-│  ├── utils.ts                         # 通用工具（默认模板、导出工具等）
-│  └── storage.ts                       # 本地存储封装（localStorage）
-├── styles/
-│  ├── globals.css
-│  ├── print.css                        # 打印样式
-│  └── tiptap.css                       # 富文本编辑器样式
-├── public/
-│  ├── NotoSansSC-Medium.ttf            # 字体（预览/打印共用）
-│  ├── template.json                    # 示例简历数据
-│  └── …
-└── types/
-   └── resume.ts
-```
+## 使用流程
 
-## 简历数据
-```typescript
-export interface ResumeFile {
-  version: string;
-  data: ResumeData;
-  metadata: {
-    exportedAt: string;
-    appVersion: string;
-  };
-}
+1. 进入首页，点击“创建简历”新建默认简历，或点击“示例”打开示例模板。
+2. 在编辑页填写标题、求职意向、个人信息和简历模块。
+3. 使用视图切换在编辑和预览之间调整工作方式。
+4. 点击“保存”后，简历会保存到当前浏览器本地。
+5. 点击“导出”输出 PDF、图片或 JSON 文件。
+6. 如需创建岗位定制版本，可在用户中心克隆已有简历后再单独修改。
 
-export interface ResumeData {
-  title: string;                     // 简历标题/姓名
-  centerTitle?: boolean;             // 标题是否居中
-  personalInfoSection: PersonalInfoSection; // 个人信息模块（支持 inline/grid）
-  jobIntentionSection?: JobIntentionSection; // 求职意向模块（可选）
-  modules: ResumeModule[];           // 其它模块（教育/经历/项目等）
-  avatar?: string;                   // 头像 URL（可为 data:URL）
-  createdAt: string;
-  updatedAt: string;
-}
-```
+## 功能详解
 
-## 功能说明
-> 基于 [resume-builder](https://github.com/magicyan418/resume-builder) 二次开发，感谢原作者的开源。
+### 用户中心
 
-### 用户中心与本地存储
+用户中心是首页，也是简历管理入口。它会展示当前浏览器中保存的所有简历，并提供常用操作：
 
-- 首页即用户中心：集中管理本地保存的简历条目
-- 数据存储在浏览器 `localStorage`，纯本地化更放心
-- 操作：新建、编辑、预览、复制（从现有条目预填）、导入与导出、批量选择与删除等
-- 支持按标题搜索、按名称/创建时间/更新时间排序
-- 空间不足时会提示先导出 JSON 做备份再清理
+- 新建简历
+- 导入 JSON 简历文件
+- 查看简历
+- 编辑简历
+- 克隆简历
+- 导出简历
+- 删除单份或批量删除简历
+- 按名称、创建时间、更新时间排序
+- 按简历名称搜索
 
-### 个人信息编辑
+当浏览器本地存储空间不足时，系统会提示先导出 JSON 做备份，再清理旧简历。
 
-支持添加、编辑和删除个人信息项，如姓名、电话、邮箱等。每个信息项可以设置标签、值和图标。
+### 简历编辑器
+
+编辑器由左侧编辑区域和右侧预览区域组成，也可以切换为仅编辑或仅预览。顶部工具栏提供返回、视图切换、AI 优化、保存和导出入口。
+
+简历标题支持左对齐或居中显示。居中模式下头像会显示在标题上方；左对齐模式下头像显示在右侧，并自动和头部信息区域保持协调高度。
+
+### 个人信息
+
+个人信息模块适合填写姓名相关的基础信息，例如电话、邮箱、所在地、个人网站、GitHub、作品集等。
+
+支持能力：
+
+- 上传头像或填写头像 URL。
+- 头像可选择圆形或方形。
+- 信息项可选择图标。
+- 信息项支持文本或链接。
+- 链接可设置展示标题。
+- 可隐藏或显示字段标签。
+- 可在单行紧凑布局和多行网格布局之间切换。
+- 网格布局可设置每行展示数量。
+- 信息项支持拖拽排序。
 
 ### 求职意向
 
-支持添加、编辑和删除个人求职意向、期望薪资、目标城市等信息。
+求职意向模块可选择开启或关闭。内置字段包括：
+
+- 工作经验
+- 求职意向
+- 目标城市
+- 期望薪资
+- 自定义字段
+
+期望薪资支持填写最低值和最高值，会自动展示为类似 `12K - 18K`、`12K 起`、`18K 以下` 的格式。求职意向项最多 6 个，可拖拽调整顺序。
 
 ### 简历模块
 
-支持多种类型的简历模块，如教育背景、工作经历、项目经验等。每个模块可以包含标题、图标、和详细内容。
+简历正文采用模块化设计。你可以创建任意模块，例如：
 
-### PDF 导出（服务端优先，自动降级）
+- 教育背景
+- 工作经历
+- 项目经历
+- 专业技能
+- 个人总结
+- 荣誉奖项
+- 证书经历
+- 开源项目
 
-- 服务端优先：`POST /api/pdf` 使用 `puppeteer-core + @sparticuz/chromium` 打开`/print`，通过`sessionStorage`传入数据，设置`displayHeaderFooter:false`、`printBackground:true`、`preferCSSPageSize:true`，返回干净的`application/pdf`（inline）。
-- 降级体验：若服务端不可用或失败，自动使用浏览器打印（所见即所得），界面会提示：
-  - 关闭“页眉和页脚”
-  - 勾选“背景图形”
+每个模块支持：
 
-环境变量（可选）
-- `NEXT_PUBLIC_FORCE_SERVER_PDF=true` 强制使用服务端 PDF
-- `NEXT_PUBLIC_FORCE_PRINT=true` 强制使用浏览器打印
-- `PUPPETEER_EXECUTABLE_PATH=/path/to/chrome` 或 `CHROME_PATH=/path/to/chrome` 指定系统 Chrome 可执行文件（在某些平台上更稳定）
+- 修改模块标题。
+- 选择模块图标。
+- 删除模块。
+- 拖拽调整模块顺序。
+- 添加 1 列、2 列、3 列或 4 列内容行。
+- 添加标签行。
+- 删除内容行。
+- 对单个模块使用 AI 对话生成草稿。
 
-### AI 服务配置
+多列内容行适合展示学校/专业/时间、公司/岗位/时间、项目名称/角色/周期等结构化信息。标签行适合展示技能栈、关键词、工具和能力标签。
 
-项目已提供统一 AI 聊天接口：`POST /api/ai/chat`。接口在服务端读取环境变量，支持 OpenAI、Anthropic、Gemini，以及兼容 OpenAI Chat Completions 格式的第三方地址。
+### 富文本编辑
 
-在项目根目录创建 `.env.local`：
+正文内容使用富文本编辑器，可以细致控制每个内容块的排版。
+
+支持格式：
+
+- 字体
+- 字号
+- 文字颜色
+- 加粗
+- 斜体
+- 下划线
+- 行内代码
+- 链接
+- 左对齐、居中、右对齐、两端对齐
+- 无序列表
+- 有序列表
+- 清除格式
+
+富文本内容会同步用于页面预览、图片导出和 PDF 导出，尽量保持所见即所得。
+
+## AI 功能
+
+AI 功能需要配置服务商 API Key。当前支持 OpenAI、Anthropic、Gemini，以及兼容 OpenAI Chat Completions 格式的第三方服务。
+
+### 整份简历 AI 助手
+
+编辑器顶部的“AI 优化”会打开整份简历助手。它围绕目标岗位 JD 工作，适合做岗位定制简历。
+
+支持三类主要操作：
+
+- **分析匹配度**：分析当前简历和目标岗位 JD 的匹配情况，给出匹配度、已匹配关键词、缺失关键词和改进方向。
+- **优化现有内容**：基于当前简历已有内容生成可应用建议，例如润色项目经历、强化技能表达、纠正错别字。
+- **生成候选内容**：基于目标岗位、JD 和用户补充信息，为专业技能、工作经历、项目经历生成候选草稿。
+
+AI 建议不会自动覆盖简历。用户可以逐条查看“当前内容”和“候选优化”，再选择复制、忽略或应用。
+
+### 候选内容生成
+
+候选内容生成适合简历还没完全写好的场景。它会根据 JD 和用户补充信息生成草稿，并在缺少事实时保留醒目的待补充提示，避免凭空编造经历。
+
+建议使用方式：
+
+- 填写目标岗位名称。
+- 粘贴完整 Job Description。
+- 在用户补充信息中写清真实经历、项目、职责、技术栈和可公开指标。
+- 确认候选内容后再应用到模块。
+
+### 模块级 AI 对话
+
+每个简历模块标题右侧都有 AI 对话入口。它只处理当前模块，适合小范围生成或改写：
+
+- 让 AI 根据已有项目经历润色表达。
+- 让 AI 把零散经历整理成多列简历行。
+- 让 AI 为专业技能生成标签行。
+- 让 AI 根据教育背景或工作经历补齐结构化描述。
+
+关闭模块 AI 窗口后，本轮对话上下文会清空，避免不同模块之间互相污染。
+
+## 导出功能
+
+### PDF 导出
+
+PDF 导出优先使用服务端 Chromium 渲染，这样可以获得更稳定的 A4 页面和更干净的 PDF 文件。服务端不可用时，会自动切换到浏览器打印模式。
+
+浏览器打印模式下，请在打印对话框中：
+
+- 关闭“页眉和页脚”。
+- 勾选“背景图形”。
+- 选择“保存为 PDF”。
+
+### 图片导出
+
+支持导出：
+
+- PNG
+- JPG
+- WEBP
+- SVG
+
+图片导出会尽量使用当前预览区域；如果当前页面没有预览区域，会临时渲染离屏预览再导出。远程图片会通过同源代理处理，降低跨域导致导出失败的概率。
+
+### JSON 导入导出
+
+JSON 是简历数据备份格式。它适合：
+
+- 迁移到另一个浏览器。
+- 备份重要简历。
+- 清理浏览器存储前先保存数据。
+- 在部署地址变化后重新导入简历。
+
+用户中心和编辑页都可以导出 JSON；用户中心支持导入 JSON。
+
+## 数据与隐私
+
+- 简历默认保存在当前浏览器本地，不会自动上传到远程数据库。
+- AI 功能开启后，目标岗位 JD、当前简历摘要和用户补充信息会发送给你配置的 AI 服务商。
+- API Key 只在服务端读取，不会作为前端环境变量暴露。
+- 访问密码保护只提供轻量页面级保护，适合个人部署或小范围分享。
+
+## 配置说明
+
+项目根目录提供 `.env.example`。如需使用 AI 功能，可创建 `.env.local`：
 
 ```bash
 AI_PROVIDER=openai
@@ -195,7 +276,7 @@ AI_MODEL=gpt-4o-mini
 不同服务商示例：
 
 ```bash
-# OpenAI 或 OpenAI 兼容接口
+# OpenAI 或 OpenAI 兼容服务
 AI_PROVIDER=openai
 AI_BASE_URL=https://api.openai.com/v1
 AI_MODEL=gpt-4o-mini
@@ -211,89 +292,77 @@ AI_BASE_URL=https://generativelanguage.googleapis.com/v1beta
 AI_MODEL=gemini-2.5-flash
 ```
 
-测试接口：
+PDF 相关配置：
 
 ```bash
-pnpm dev
+NEXT_PUBLIC_FORCE_SERVER_PDF=true  # 强制使用服务端 PDF
+NEXT_PUBLIC_FORCE_PRINT=true       # 强制使用浏览器打印
+PUPPETEER_EXECUTABLE_PATH=/path/to/chrome
+CHROME_PATH=/path/to/chrome
 ```
 
-另开一个终端执行：
+访问密码：
 
 ```bash
-curl -X POST http://localhost:3000/api/ai/chat \
-  -H "Content-Type: application/json" \
-  -d "{\"messages\":[{\"role\":\"user\",\"content\":\"用一句中文回复：AI 接口已连通\"}]}"
-```
-
-成功时会返回：
-
-```json
-{
-  "provider": "openai",
-  "model": "gpt-4o-mini",
-  "text": "AI 接口已连通。"
-}
-```
-
-如果环境变量缺失或服务商返回错误，接口会直接返回明确的错误信息，便于定位配置或网络问题。
-
-接口说明
-- `GET /api/pdf/health`：健康检查，验证 headless 启动能力
-- `POST /api/pdf`：传入`{ resumeData }`，直接返回`application/pdf`
-- `POST /api/pdf/:filename`：传入`{ resumeData }`，生成后返回`303`到`GET /api/pdf/:filename?token=...`（便于内联预览/下载）
-- `GET /api/pdf/:filename?token=...`：短期缓存（约 5 分钟）内联返回 PDF
-- `GET /api/image-proxy?url=...`：图片代理，导出图片时用于规避跨域与画布污染
-### 部署到 Vercel
-
-- 仅支持 Node.js Runtime 的 Serverless Functions（不是 Edge）。
-- 我们在 `route.ts` 中声明了 `export const runtime = 'nodejs'` 与 `dynamic = 'force-dynamic'`。
-- 依赖：`puppeteer-core`、`@sparticuz/chromium`（Serverless 友好）。无需打包二进制。
-- 建议在项目设置提升函数超时与内存（如 1024MB/1536MB）。
-
-### 数据导入导出
-
-- 在“用户中心”可导入 `.json` 文件；导出支持 JSON、PDF、PNG/JPG/WEBP/SVG 多种格式
-- 编辑页右上角亦内置导出菜单；导出 PDF 默认走服务端，可降级浏览器打印
-
-## 自定义主题
-
-项目使用 Tailwind CSS 进行样式管理，可按需扩展样式与主题（见样式与组件代码）。
-
-
-## 访问密码保护
-
-如果你希望对页面访问进行简单的密码保护，可设置环境变量 `SITE_PASSWORD`。当该变量存在且不为空时：
-- 用户访问任意页面会先被重定向到 `/auth` 输入密码；
-- 验证通过后，服务端会在浏览器写入一个有效期 30 天的 Cookie，后续访问无需再输入；
-- 若未配置 `SITE_PASSWORD`，则不启用认证，正常访问。
-
-使用方法：
-- 在项目根目录新增或编辑 `.env.local` 文件，加入：
-
-```
 SITE_PASSWORD=你的访问密码
 ```
 
-说明：
-- 我们不会在 Cookie 中保存明文密码，而是保存其 SHA-256 摘要；
-- 中间件只对页面路由生效，不拦截 `/_next/*`、`/favicon.ico`、`/robots.txt` 以及认证相关路径 `/auth`、`/api/auth`；
-- 如需关闭认证，删除或清空 `SITE_PASSWORD` 即可。
+设置后，访问页面会先进入密码页；验证通过后 30 天内无需重复输入。删除或清空 `SITE_PASSWORD` 即可关闭访问保护。
 
-## TODO
+## 常见问题
 
-### 集成 AI 服务
-- [x] 允许用户自定义服务提供商和模型，支持 OpenAI、Anthropic、Gemini等接口类型
-- [X] 结合 Job Description 自动编写、润色、优化、纠错简历
+### 首页没有看到之前保存的简历
+
+简历保存在浏览器本地。请确认使用的是同一个浏览器、同一个域名和协议。浏览器清理站点数据、无痕模式关闭、部署域名变化都会导致本地数据不可见。已经导出的 JSON 文件可以在用户中心重新导入。
+
+### AI 按钮提示配置错误
+
+请检查 `.env.local` 是否配置了 `AI_PROVIDER`、`AI_API_KEY` 和可用模型。修改环境变量后需要重启开发服务。
+
+### AI 返回格式错误
+
+AI 简历优化需要模型稳定返回结构化内容。可以优先尝试更稳定的模型，或检查自定义 OpenAI 兼容服务是否完整支持聊天补全格式。
+
+### PDF 自动切换到浏览器打印
+
+说明当前环境无法启动服务端 Chromium，或 PDF 生成失败。可以通过指定系统 Chrome 路径、增加部署平台函数内存/超时，或直接使用浏览器打印模式解决。
+
+### PDF 下载提示缓存过期
+
+PDF 预览使用短期缓存。缓存过期后，重新点击导出即可生成新的 PDF。
+
+### 图片导出失败或头像缺失
+
+远程头像可能被上游站点阻止访问。可以改用本地上传头像、同源图片或 data URL。
+
+## 技术栈
+
+- **框架**：Next.js、React、TypeScript
+- **样式与 UI**：Tailwind CSS、Shadcn UI、Radix UI
+- **富文本**：Tiptap
+- **拖拽排序**：@hello-pangea/dnd
+- **图片导出**：html-to-image
+- **PDF 生成**：puppeteer-core、@sparticuz/chromium
+
+## 路线图
+
+### AI 服务
+
+- [x] 支持 OpenAI、Anthropic、Gemini 及 OpenAI 兼容服务配置
+- [x] 根据 Job Description 分析匹配度、优化简历、生成候选内容
+- [x] 支持单模块 AI 对话式生成与应用
 - [ ] 基于简历给出面试准备建议
 - [ ] 模拟面试
-- [ ] 利用 AI Agent 从网络自动抓取并汇总相似岗位的面经并展示
+- [ ] 利用 AI Agent 自动抓取并汇总相似岗位面经
 
-### 个性化简历样式
-- [ ] 提供更多简历模板以供选择，可参考 [novoresume](https://novoresume.com/cv-templates)
+### 简历样式
 
-### 支持加密远程存储
-- [ ] 集成 WebDAV、Google Cloud、OneDrive 等用于数据存储与同步
-- [ ] 用户自定义加密密码
+- [ ] 提供更多简历模板
+
+### 数据同步
+
+- [ ] 集成 WebDAV、Google Drive、OneDrive 等远程存储
+- [ ] 支持用户自定义加密密码
 
 ## 许可证
 

@@ -31,3 +31,5 @@ yarn-error.log*
 next-env.d.ts
 .vscode/
 .kiro/
+AI优化业务.md
+/md/*

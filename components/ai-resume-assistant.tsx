@@ -6,6 +6,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { useToast } from "@/hooks/use-toast"
 import { applyAiResumeSuggestion } from "@/lib/ai/resume-apply"
 import { collectAiResumeInputErrors } from "@/lib/ai/resume-requirements"
+import { requestJson } from "@/lib/fetch-json"
 import type { AiResumeAction, AiResumeResponse, AiResumeSection, AiResumeSuggestion } from "@/types/ai-resume"
 import type { ResumeData } from "@/types/resume"
 import { Icon } from "@iconify/react"
@@ -150,32 +151,7 @@ async function requestAiResume(input: {
   readonly sections: readonly AiResumeSection[]
   readonly targetRole: string
 }): Promise<AiResumeResponse> {
-  const response = await fetch("/api/ai/resume", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(input),
-  })
-  const data = parseResponseJson(await response.text())
-  if (!response.ok) throw new Error(readErrorMessage(data))
-  return data as AiResumeResponse
-}
-
-function parseResponseJson(text: string): unknown {
-  if (!text) {
-    throw new Error("服务端没有返回内容")
-  }
-  try {
-    return JSON.parse(text) as unknown
-  } catch {
-    throw new Error(`服务端返回内容不是合法 JSON：${text}`)
-  }
-}
-
-function readErrorMessage(data: unknown): string {
-  if (data && typeof data === "object" && "error" in data) {
-    return String((data as { error: unknown }).error)
-  }
-  return "请求失败"
+  return requestJson<AiResumeResponse>("/api/ai/resume", input)
 }
 
 function findTargetRole(resumeData: ResumeData): string {

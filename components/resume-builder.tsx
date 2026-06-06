@@ -18,6 +18,7 @@ import JobIntentionEditor from "./job-intention-editor"
 import ModuleEditor from "./module-editor"
 import ExportButton from "./export-button"
 import AiResumeAssistant from "./ai-resume-assistant"
+import InterviewAdviceAssistant from "./interview-advice-assistant"
 
 type ViewMode = "both" | "edit-only" | "preview-only"
 
@@ -153,6 +154,8 @@ export default function ResumeBuilder({ initialData, template = "default", onCha
             resumeData={editorState.resumeData}
             onApplyResumeData={replaceResumeData}
           />
+
+          <InterviewAdviceAssistant resumeData={editorState.resumeData} />
 
           {/* 保存 */}
           {onSave ? (

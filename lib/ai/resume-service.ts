@@ -1,10 +1,10 @@
 import { createAiChatCompletion } from "@/lib/ai/client"
-import { buildResumePrompt, type ResumeSummary } from "@/lib/ai/resume-prompt"
+import { buildResumePrompt } from "@/lib/ai/resume-prompt"
 import { validateAiResumeResponse } from "@/lib/ai/resume-response-validation"
 import { validateAiResumeInput } from "@/lib/ai/resume-requirements"
 import { parseAiResumeResponse } from "@/lib/ai/resume-schema"
+import { summarizeResume } from "@/lib/ai/resume-summary"
 import type { AiResumeRequest, AiResumeResponse } from "@/types/ai-resume"
-import type { JSONContent, ResumeData, ResumeModule } from "@/types/resume"
 
 const RESUME_MAX_TOKENS = 2800
 const RESUME_TEMPERATURE = 0.2
@@ -21,84 +21,4 @@ export async function createAiResumeSuggestions(request: AiResumeRequest): Promi
   const response = parseAiResumeResponse(result.text, request.action)
   validateAiResumeResponse(request, response)
   return response
-}
-
-function summarizeResume(resumeData: ResumeData, targetRole: string): ResumeSummary {
-  const modules = readModules(resumeData)
-  return {
-    title: resumeData.title,
-    targetRole: targetRole || findTargetRole(resumeData),
-    jobIntentions: (resumeData.jobIntentionSection?.items ?? []).map((item) => ({
-      itemId: item.id,
-      label: item.label,
-      type: item.type,
-      value: item.value,
-    })),
-    modules: modules.map(summarizeModule),
-  }
-}
-
-function summarizeModule(module: ResumeModule) {
-  return {
-    moduleId: module.id,
-    title: module.title,
-    rows: readRows(module).map((row) => summarizeRow(module.id, row)),
-  }
-}
-
-function summarizeRow(moduleId: string, row: ResumeModule["rows"][number]) {
-  if (row.type === "tags") {
-    return { rowId: row.id, type: "tags" as const, tags: row.tags ?? [] }
-  }
-  const elements = readElements(moduleId, row)
-  return {
-    rowId: row.id,
-    type: "rich" as const,
-    elements: elements.map((element) => ({
-      elementId: element.id,
-      text: readJsonContentText(element.content),
-    })),
-  }
-}
-
-function readModules(resumeData: ResumeData): readonly ResumeModule[] {
-  if (!Array.isArray(resumeData.modules)) {
-    throw new Error("简历模块必须是数组")
-  }
-  return resumeData.modules
-}
-
-function readRows(module: ResumeModule): ResumeModule["rows"] {
-  if (!Array.isArray(module.rows)) {
-    throw new Error(`模块「${module.title || module.id}」的内容行必须是数组`)
-  }
-  return module.rows
-}
-
-function readElements(moduleId: string, row: ResumeModule["rows"][number]) {
-  if (!Array.isArray(row.elements)) {
-    throw new Error(`模块 ${moduleId} 的内容元素必须是数组`)
-  }
-  return row.elements
-}
-
-function findTargetRole(resumeData: ResumeData): string {
-  const items = resumeData.jobIntentionSection?.items ?? []
-  return items.find((item) => item.type === "position")?.value ?? ""
-}
-
-function readJsonContentText(content: JSONContent): string {
-  const parts: string[] = []
-  collectText(content, parts)
-  return parts.join("").replace(/\n{3,}/g, "\n\n").trim()
-}
-
-function collectText(node: JSONContent, parts: string[]): void {
-  if (node.text) {
-    parts.push(node.text)
-  }
-  if (node.type === "paragraph" && parts.length > 0) {
-    parts.push("\n")
-  }
-  node.content?.forEach((child) => collectText(child, parts))
 }

@@ -5,39 +5,8 @@ import {
   OPTIMIZE_RESPONSE_EXAMPLE,
 } from "@/lib/ai/resume-prompt-examples"
 import { findModuleByRequirement, REQUIRED_AI_RESUME_MODULES } from "@/lib/ai/resume-requirements"
+import type { ResumeModuleSummary, ResumeSummary } from "@/lib/ai/resume-summary"
 import type { AiResumeAction, AiResumeRequest, AiResumeSection } from "@/types/ai-resume"
-
-export interface ResumeSummary {
-  readonly title: string
-  readonly targetRole: string
-  readonly jobIntentions: readonly ResumeIntentSummary[]
-  readonly modules: readonly ResumeModuleSummary[]
-}
-
-export interface ResumeIntentSummary {
-  readonly itemId: string
-  readonly label: string
-  readonly type: string
-  readonly value: string
-}
-
-export interface ResumeModuleSummary {
-  readonly moduleId: string
-  readonly title: string
-  readonly rows: readonly ResumeRowSummary[]
-}
-
-export interface ResumeRowSummary {
-  readonly rowId: string
-  readonly type: "rich" | "tags"
-  readonly elements?: readonly ResumeElementSummary[]
-  readonly tags?: readonly string[]
-}
-
-export interface ResumeElementSummary {
-  readonly elementId: string
-  readonly text: string
-}
 
 const SYSTEM_PROMPT = `你是专业中文简历优化助手。
 你必须基于用户提供的简历、JD 和补充信息进行优化。
