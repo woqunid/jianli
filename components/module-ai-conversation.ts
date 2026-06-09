@@ -8,6 +8,7 @@ import {
   type SetStateAction,
 } from "react"
 import { useToast } from "@/hooks/use-toast"
+import { withStoredAiRequestConfig } from "@/lib/ai/client-config-storage"
 import { createModuleRowsFromDrafts } from "@/lib/module-ai/draft-rows"
 import type { ModuleAiMessage, ModuleAiResponse, ModuleAiRowDraft } from "@/types/module-ai"
 import type { ModuleContentRow, ResumeModule } from "@/types/resume"
@@ -142,7 +143,7 @@ async function requestModuleAi(
   const response = await fetch("/api/ai/module-chat", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ module, messages: messages.map(toApiMessage) }),
+    body: JSON.stringify(withStoredAiRequestConfig({ module, messages: messages.map(toApiMessage) })),
     signal,
   })
   const data = parseResponseJson(await response.text())

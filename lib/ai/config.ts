@@ -1,3 +1,4 @@
+import type { AiRequestConfig } from "@/types/ai-config";
 import type { AiConfig, AiProvider } from "./types";
 
 const DEFAULT_BASE_URLS: Readonly<Record<AiProvider, string>> = {
@@ -30,7 +31,14 @@ function readProvider(): AiProvider {
   return value as AiProvider;
 }
 
-export function loadAiConfig(modelOverride?: string): AiConfig {
+export function loadAiConfig(modelOverride?: string, requestConfig?: AiRequestConfig): AiConfig {
+  if (requestConfig?.mode === "custom") {
+    return loadCustomAiConfig(requestConfig, modelOverride);
+  }
+  return loadEnvironmentAiConfig(modelOverride);
+}
+
+function loadEnvironmentAiConfig(modelOverride?: string): AiConfig {
   const provider = readProvider();
   const baseUrl = process.env.AI_BASE_URL?.trim() || DEFAULT_BASE_URLS[provider];
   const model = modelOverride?.trim() || process.env.AI_MODEL?.trim() || DEFAULT_MODELS[provider];
@@ -38,6 +46,19 @@ export function loadAiConfig(modelOverride?: string): AiConfig {
   return {
     provider,
     apiKey: readRequiredEnv("AI_API_KEY"),
+    baseUrl: baseUrl.replace(/\/+$/, ""),
+    model,
+  };
+}
+
+function loadCustomAiConfig(requestConfig: Extract<AiRequestConfig, { mode: "custom" }>, modelOverride?: string): AiConfig {
+  const provider = requestConfig.provider as AiProvider;
+  const baseUrl = requestConfig.baseUrl?.trim() || DEFAULT_BASE_URLS[provider];
+  const model = modelOverride?.trim() || requestConfig.model?.trim() || DEFAULT_MODELS[provider];
+
+  return {
+    provider,
+    apiKey: requestConfig.apiKey.trim(),
     baseUrl: baseUrl.replace(/\/+$/, ""),
     model,
   };

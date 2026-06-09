@@ -1,4 +1,4 @@
-# 简历生成器
+﻿# 简历生成器
 
 > 基于 [resume-builder](https://github.com/magicyan418/resume-builder) 二次开发，感谢原作者的开源。
 
@@ -266,13 +266,6 @@ JSON 是简历数据备份格式。它适合：
 
 项目根目录提供 `.env.example`。如需使用 AI 功能，可创建 `.env.local`：
 
-```bash
-AI_PROVIDER=openai
-AI_BASE_URL=https://api.openai.com/v1
-AI_API_KEY=你的 API Key
-AI_MODEL=gpt-4o-mini
-```
-
 不同服务商示例：
 
 ```bash
@@ -291,16 +284,6 @@ AI_PROVIDER=gemini
 AI_BASE_URL=https://generativelanguage.googleapis.com/v1beta
 AI_MODEL=gemini-2.5-flash
 ```
-
-PDF 相关配置：
-
-```bash
-NEXT_PUBLIC_FORCE_SERVER_PDF=true  # 强制使用服务端 PDF
-NEXT_PUBLIC_FORCE_PRINT=true       # 强制使用浏览器打印
-PUPPETEER_EXECUTABLE_PATH=/path/to/chrome
-CHROME_PATH=/path/to/chrome
-```
-
 访问密码：
 
 ```bash
@@ -351,18 +334,8 @@ PDF 预览使用短期缓存。缓存过期后，重新点击导出即可生成�
 - [x] 支持 OpenAI、Anthropic、Gemini 及 OpenAI 兼容服务配置
 - [x] 根据 Job Description 分析匹配度、优化简历、生成候选内容
 - [x] 支持单模块 AI 对话式生成与应用
-- [ ] 基于简历给出面试准备建议
-- [ ] 模拟面试
+- [x] 基于简历给出面试准备建议
 - [ ] 利用 AI Agent 自动抓取并汇总相似岗位面经
-
-### 简历样式
-
-- [ ] 提供更多简历模板
-
-### 数据同步
-
-- [ ] 集成 WebDAV、Google Drive、OneDrive 等远程存储
-- [ ] 支持用户自定义加密密码
 
 ## 许可证
 

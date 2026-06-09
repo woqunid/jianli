@@ -1,3 +1,5 @@
+import type { AiRequestConfig } from "@/types/ai-config";
+
 export type AiProvider = "openai" | "anthropic" | "gemini";
 
 export type AiMessageRole = "system" | "user" | "assistant";
@@ -10,6 +12,7 @@ export interface AiMessage {
 export interface AiChatOptions {
   readonly messages: readonly AiMessage[];
   readonly model?: string;
+  readonly requestConfig?: AiRequestConfig;
   readonly temperature?: number;
   readonly maxTokens?: number;
 }

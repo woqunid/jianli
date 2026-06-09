@@ -1,8 +1,11 @@
+import { withStoredAiRequestConfig } from "@/lib/ai/client-config-storage"
+
 export async function requestJson<T>(url: string, body: unknown): Promise<T> {
+  const requestBody = url.startsWith("/api/ai/") ? withStoredAiRequestConfig(body) : body
   const response = await fetch(url, {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify(body),
+    body: JSON.stringify(requestBody),
   })
   const data = parseResponseJson(await response.text())
   if (!response.ok) throw new Error(readErrorMessage(data))

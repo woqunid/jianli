@@ -16,6 +16,7 @@ import { StorageError, createEntryFromData, deleteResumes, getAllResumes, loadDe
 import { createDefaultResumeData } from "@/lib/utils"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import ExportButton from "@/components/export-button"
+import AiConfigDialog from "@/components/ai-config-dialog"
 
 type SortKey = "name" | "createdAt" | "updatedAt"
 type SortDir = "asc" | "desc"
@@ -195,6 +196,7 @@ export default function UserCenter() {
             />
             {null}
             <Separator orientation="vertical" className="h-6" />
+            <AiConfigDialog />
             <Button
               variant="default"
               className="gap-2"
@@ -245,6 +247,7 @@ export default function UserCenter() {
                 <Button onClick={handleCreate} className="gap-2">
                   <Icon icon="mdi:plus" className="w-4 h-4" /> 创建简历
                 </Button>
+                <AiConfigDialog />
                 <Button
                   variant="outline"
                   className="gap-2"

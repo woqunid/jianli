@@ -2,6 +2,8 @@ import { NextResponse } from "next/server"
 import { AiProviderError } from "@/lib/ai/http"
 import { createAiInterviewAdvice } from "@/lib/ai/interview-advice-service"
 import { parseInterviewAdviceRequest } from "@/lib/ai/interview-advice-schema"
+import { readAiRequestConfigFromBody } from "@/lib/ai/request-config"
+import type { AiRequestConfig } from "@/types/ai-config"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -18,15 +20,17 @@ export async function POST(req: Request) {
   }
 
   let request: ReturnType<typeof parseInterviewAdviceRequest>
+  let requestConfig: AiRequestConfig | undefined
   try {
     request = parseInterviewAdviceRequest(body)
+    requestConfig = readAiRequestConfigFromBody(body)
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
     return NextResponse.json({ error: message }, { status: HTTP_STATUS_BAD_REQUEST })
   }
 
   try {
-    const result = await createAiInterviewAdvice(request)
+    const result = await createAiInterviewAdvice(request, requestConfig)
     return NextResponse.json(result)
   } catch (error) {
     const status = error instanceof AiProviderError ? error.status : HTTP_STATUS_INTERNAL_ERROR

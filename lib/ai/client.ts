@@ -3,7 +3,7 @@ import { callAnthropic, callGemini, callOpenAi } from "./providers";
 import type { AiChatOptions, AiChatResult } from "./types";
 
 export async function createAiChatCompletion(options: AiChatOptions): Promise<AiChatResult> {
-  const config = loadAiConfig(options.model);
+  const config = loadAiConfig(options.model, options.requestConfig);
   const request = { config, options };
 
   if (config.provider === "openai") {

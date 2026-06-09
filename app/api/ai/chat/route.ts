@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { AiProviderError } from "@/lib/ai/http";
 import { createAiChatCompletion } from "@/lib/ai/client";
+import { parseAiRequestConfig } from "@/lib/ai/request-config";
 import type { AiChatOptions, AiMessage } from "@/lib/ai/types";
 
 export const runtime = "nodejs";
@@ -30,6 +31,7 @@ function parseOptions(body: unknown): AiChatOptions {
   return {
     messages: input.messages,
     model: typeof input.model === "string" ? input.model : undefined,
+    requestConfig: parseAiRequestConfig(input.aiConfig),
     temperature: readOptionalNumber(input.temperature, "temperature"),
     maxTokens: readOptionalNumber(input.maxTokens, "maxTokens"),
   };

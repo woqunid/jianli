@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server"
 import { createAiChatCompletion } from "@/lib/ai/client"
 import { AiProviderError } from "@/lib/ai/http"
+import { readAiRequestConfigFromBody } from "@/lib/ai/request-config"
 import { buildModuleAiMessages } from "@/lib/module-ai/prompt"
 import { parseModuleAiResponseText } from "@/lib/module-ai/response"
 import type { ModuleAiMessage, ModuleAiRequest } from "@/types/module-ai"
@@ -18,8 +19,10 @@ export async function POST(req: Request) {
       throw new Error("请求体不是合法 JSON")
     })
     const request = parseRequest(body)
+    const requestConfig = readAiRequestConfigFromBody(body)
     const result = await createAiChatCompletion({
       messages: buildModuleAiMessages(request),
+      requestConfig,
       temperature: MODULE_AI_TEMPERATURE,
     })
     return NextResponse.json(parseModuleAiResponseText(result.text))
