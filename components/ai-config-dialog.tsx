@@ -42,6 +42,12 @@ const PROVIDER_PLACEHOLDERS: Readonly<Record<AiClientProvider, { readonly baseUr
   anthropic: { baseUrl: "https://api.anthropic.com/v1", model: "claude-3-5-haiku-latest" },
 }
 
+const CUSTOM_FIELDS_CLASS =
+  "space-y-4 rounded-md border-2 border-slate-300 bg-slate-50/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_18px_rgba(15,23,42,0.08)]"
+
+const FIELD_CONTROL_CLASS =
+  "border-2 border-slate-300 bg-white text-slate-900 shadow-[inset_0_1px_3px_rgba(15,23,42,0.08),0_1px_2px_rgba(15,23,42,0.06)] placeholder:text-slate-400 focus-visible:border-emerald-600 focus-visible:ring-emerald-600/20"
+
 export default function AiConfigDialog() {
   const { toast } = useToast()
   const [open, setOpen] = useState(false)
@@ -166,11 +172,12 @@ function CustomFields({
 }) {
   const placeholders = PROVIDER_PLACEHOLDERS[config.provider]
   return (
-    <div className="space-y-4 rounded-md border p-4">
+    <div className={CUSTOM_FIELDS_CLASS}>
       <ProviderSelect provider={config.provider} onChange={(provider) => onChange({ provider })} />
       <TextField
         id="ai-config-api-key"
         label="API Key"
+        placeholder="请输入 API Key"
         type="password"
         value={config.apiKey}
         onChange={(apiKey) => onChange({ apiKey })}
@@ -204,7 +211,7 @@ function ProviderSelect({
     <div className="space-y-2">
       <Label>请求格式</Label>
       <Select value={provider} onValueChange={(value) => onChange(value as AiClientProvider)}>
-        <SelectTrigger className="w-full">
+        <SelectTrigger className={`${FIELD_CONTROL_CLASS} min-h-11 w-full`}>
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
@@ -239,6 +246,7 @@ function TextField({
       <Label htmlFor={id}>{label}</Label>
       <Input
         id={id}
+        className={`h-11 ${FIELD_CONTROL_CLASS}`}
         placeholder={placeholder}
         type={type}
         value={value}
