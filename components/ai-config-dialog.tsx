@@ -11,42 +11,16 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { AiConfigFields, PROVIDER_LABELS } from "@/components/ai-config-fields"
 import { useToast } from "@/hooks/use-toast"
 import { loadAiClientConfig, saveAiClientConfig } from "@/lib/ai/client-config-storage"
 import {
   DEFAULT_AI_CLIENT_CONFIG,
   type AiClientConfig,
-  type AiClientProvider,
   type AiConfigMode,
 } from "@/types/ai-config"
 import { Icon } from "@iconify/react"
-
-const PROVIDER_LABELS: Readonly<Record<AiClientProvider, string>> = {
-  openai: "OpenAI",
-  gemini: "Gemini",
-  anthropic: "Anthropic",
-}
-
-const PROVIDER_PLACEHOLDERS: Readonly<Record<AiClientProvider, { readonly baseUrl: string; readonly model: string }>> = {
-  openai: { baseUrl: "https://api.openai.com/v1", model: "gpt-4o-mini" },
-  gemini: { baseUrl: "https://generativelanguage.googleapis.com/v1beta", model: "gemini-2.5-flash" },
-  anthropic: { baseUrl: "https://api.anthropic.com/v1", model: "claude-3-5-haiku-latest" },
-}
-
-const CUSTOM_FIELDS_CLASS =
-  "space-y-4 rounded-md border-2 border-slate-300 bg-slate-50/70 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_8px_18px_rgba(15,23,42,0.08)]"
-
-const FIELD_CONTROL_CLASS =
-  "border-2 border-slate-300 bg-white text-slate-900 shadow-[inset_0_1px_3px_rgba(15,23,42,0.08),0_1px_2px_rgba(15,23,42,0.06)] placeholder:text-slate-400 focus-visible:border-emerald-600 focus-visible:ring-emerald-600/20"
 
 export default function AiConfigDialog() {
   const { toast } = useToast()
@@ -99,7 +73,7 @@ export default function AiConfigDialog() {
         </DialogHeader>
         <div className="space-y-5">
           <ModeSelector mode={draft.mode} onChange={(mode) => update({ mode })} />
-          {draft.mode === "custom" ? <CustomFields config={draft} onChange={update} /> : null}
+          {draft.mode === "custom" ? <AiConfigFields config={draft} onChange={update} /> : null}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={() => update(DEFAULT_AI_CLIENT_CONFIG)}>
@@ -160,99 +134,6 @@ function ModeItem({
         {label}
       </span>
     </Label>
-  )
-}
-
-function CustomFields({
-  config,
-  onChange,
-}: {
-  readonly config: AiClientConfig
-  readonly onChange: (patch: Partial<AiClientConfig>) => void
-}) {
-  const placeholders = PROVIDER_PLACEHOLDERS[config.provider]
-  return (
-    <div className={CUSTOM_FIELDS_CLASS}>
-      <ProviderSelect provider={config.provider} onChange={(provider) => onChange({ provider })} />
-      <TextField
-        id="ai-config-api-key"
-        label="API Key"
-        placeholder="请输入 API Key"
-        type="password"
-        value={config.apiKey}
-        onChange={(apiKey) => onChange({ apiKey })}
-      />
-      <TextField
-        id="ai-config-base-url"
-        label="Base URL"
-        placeholder={placeholders.baseUrl}
-        value={config.baseUrl}
-        onChange={(baseUrl) => onChange({ baseUrl })}
-      />
-      <TextField
-        id="ai-config-model"
-        label="模型"
-        placeholder={placeholders.model}
-        value={config.model}
-        onChange={(model) => onChange({ model })}
-      />
-    </div>
-  )
-}
-
-function ProviderSelect({
-  provider,
-  onChange,
-}: {
-  readonly provider: AiClientProvider
-  readonly onChange: (provider: AiClientProvider) => void
-}) {
-  return (
-    <div className="space-y-2">
-      <Label>请求格式</Label>
-      <Select value={provider} onValueChange={(value) => onChange(value as AiClientProvider)}>
-        <SelectTrigger className={`${FIELD_CONTROL_CLASS} min-h-11 w-full`}>
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {Object.entries(PROVIDER_LABELS).map(([value, label]) => (
-            <SelectItem key={value} value={value}>
-              {label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
-  )
-}
-
-function TextField({
-  id,
-  label,
-  onChange,
-  placeholder,
-  type = "text",
-  value,
-}: {
-  readonly id: string
-  readonly label: string
-  readonly onChange: (value: string) => void
-  readonly placeholder?: string
-  readonly type?: string
-  readonly value: string
-}) {
-  return (
-    <div className="space-y-2">
-      <Label htmlFor={id}>{label}</Label>
-      <Input
-        id={id}
-        className={`h-11 ${FIELD_CONTROL_CLASS}`}
-        placeholder={placeholder}
-        type={type}
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-      />
-    </div>
   )
 }
 
