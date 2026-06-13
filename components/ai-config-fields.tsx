@@ -45,11 +45,10 @@ export function AiConfigFields({ config, onChange }: AiConfigFieldsProps) {
   return (
     <div className={CUSTOM_FIELDS_CLASS}>
       <ProviderSelect provider={config.provider} onChange={(provider) => onChange({ provider })} />
-      <TextField
+      <PasswordField
         id="ai-config-api-key"
         label="API Key"
         placeholder="请输入 API Key"
-        type="password"
         value={config.apiKey}
         onChange={(apiKey) => onChange({ apiKey })}
       />
@@ -154,6 +153,49 @@ function TextField({
         value={value}
         onChange={(event) => onChange(event.target.value)}
       />
+    </div>
+  )
+}
+
+function PasswordField({
+  id,
+  label,
+  onChange,
+  placeholder,
+  value,
+}: {
+  readonly id: string
+  readonly label: string
+  readonly onChange: (value: string) => void
+  readonly placeholder?: string
+  readonly value: string
+}) {
+  const [showPassword, setShowPassword] = useState(false)
+
+  return (
+    <div className="space-y-2">
+      <Label htmlFor={id}>{label}</Label>
+      <div className="relative">
+        <Input
+          id={id}
+          className={`h-11 pr-10 ${FIELD_CONTROL_CLASS}`}
+          placeholder={placeholder}
+          type={showPassword ? "text" : "password"}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+        />
+        <button
+          type="button"
+          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 focus:outline-none"
+          onClick={() => setShowPassword(!showPassword)}
+          aria-label={showPassword ? "隐藏密码" : "显示密码"}
+        >
+          <Icon
+            icon={showPassword ? "mdi:eye-off-outline" : "mdi:eye-outline"}
+            className="h-5 w-5"
+          />
+        </button>
+      </div>
     </div>
   )
 }
