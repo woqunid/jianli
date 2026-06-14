@@ -62,10 +62,10 @@ export default function InterviewAdviceAssistant({ resumeData }: InterviewAdvice
         <Button
           size="sm"
           variant="ghost"
-          className="relative min-w-[104px] justify-center gap-2 px-3 py-1.5 text-muted-foreground hover:bg-transparent hover:text-foreground"
+          className="relative justify-center gap-2 px-3 py-1.5 text-foreground hover:bg-primary/10 hover:text-primary"
         >
-          <Icon icon="mdi:account-question" className="h-4 w-4" />
-          面试建议
+          <Icon icon="mdi:lightbulb-on" className="h-4 w-4" />
+          <span className="hidden sm:inline">面试建议</span>
         </Button>
       </SheetTrigger>
       <SheetContent className="w-full overflow-y-auto sm:max-w-3xl">

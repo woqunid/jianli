@@ -99,10 +99,10 @@ export default function AiResumeAssistant({ resumeData, onApplyResumeData }: AiR
         <Button
           size="sm"
           variant="ghost"
-          className="relative min-w-[100px] justify-center gap-2 px-3 py-1.5 text-muted-foreground hover:bg-transparent hover:text-foreground"
+          className="relative justify-center gap-2 px-3 py-1.5 text-foreground hover:bg-primary/10 hover:text-primary"
         >
-          <Icon icon="mdi:creation" className="h-4 w-4" />
-          AI 优化
+          <Icon icon="mdi:sparkles" className="h-4 w-4" />
+          <span className="hidden sm:inline">AI 优化</span>
         </Button>
       </SheetTrigger>
       <SheetContent className="w-full overflow-y-auto sm:max-w-2xl">

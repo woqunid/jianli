@@ -18,6 +18,7 @@ import JobIntentionEditor from "./job-intention-editor"
 import ModuleEditor from "./module-editor"
 import ExportButton from "./export-button"
 import AiResumeAssistant from "./ai-resume-assistant"
+import GlobalAiAssistant from "./global-ai-assistant"
 import InterviewAdviceAssistant from "./interview-advice-assistant"
 
 type ViewMode = "both" | "edit-only" | "preview-only"
@@ -150,12 +151,24 @@ export default function ResumeBuilder({ initialData, template = "default", onCha
 
           <ViewModeSelector viewMode={viewMode} onViewModeChange={handleViewModeChange} />
 
-          <AiResumeAssistant
-            resumeData={editorState.resumeData}
-            onApplyResumeData={replaceResumeData}
-          />
+          <Separator orientation="vertical" className="h-6" />
 
-          <InterviewAdviceAssistant resumeData={editorState.resumeData} />
+          {/* AI 功能区 */}
+          <div className="flex items-center gap-1 rounded-lg border bg-muted/30 p-1">
+            <AiResumeAssistant
+              resumeData={editorState.resumeData}
+              onApplyResumeData={replaceResumeData}
+            />
+
+            <GlobalAiAssistant
+              resumeData={editorState.resumeData}
+              onApplyResumeData={replaceResumeData}
+            />
+
+            <InterviewAdviceAssistant resumeData={editorState.resumeData} />
+          </div>
+
+          <Separator orientation="vertical" className="h-6" />
 
           {/* 保存 */}
           {onSave ? (
