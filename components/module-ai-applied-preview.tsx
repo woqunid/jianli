@@ -14,7 +14,7 @@ export default function ModuleAiAppliedPreview({ applied = false, rows }: Module
   if (rows.length === 0) return null
 
   return (
-    <div className="mt-3 rounded-md border border-slate-200 bg-white p-3 text-slate-800 shadow-sm">
+    <div className="mt-3 min-w-0 max-w-full overflow-hidden rounded-md border border-slate-200 bg-white p-3 text-slate-800 shadow-sm">
       <button
         type="button"
         onClick={() => setOpen((current) => !current)}
@@ -50,13 +50,16 @@ function AppliedRow({ index, row }: { readonly index: number; readonly row: Modu
 
 function RichRow({ columns, index }: { readonly columns: readonly string[]; readonly index: number }) {
   return (
-    <div className="rounded border border-slate-200 bg-slate-50 p-2">
+    <div className="min-w-0 overflow-hidden rounded border border-slate-200 bg-slate-50 p-2">
       <div className="mb-1 text-[11px] text-slate-500">
         第 {index + 1} 行 / {columns.length} 列
       </div>
-      <div className="grid gap-1 text-xs" style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(0, 1fr))` }}>
+      <div className="grid min-w-0 gap-1 text-xs" style={{ gridTemplateColumns: `repeat(${columns.length}, minmax(0, 1fr))` }}>
         {columns.map((column, columnIndex) => (
-          <div key={`${index}-${columnIndex}`} className="whitespace-pre-wrap rounded bg-white px-2 py-1 leading-relaxed text-slate-800">
+          <div
+            key={`${index}-${columnIndex}`}
+            className="min-w-0 whitespace-pre-wrap break-words rounded bg-white px-2 py-1 leading-relaxed text-slate-800 [overflow-wrap:anywhere]"
+          >
             {column}
           </div>
         ))}
@@ -67,11 +70,14 @@ function RichRow({ columns, index }: { readonly columns: readonly string[]; read
 
 function TagsRow({ index, tags }: { readonly index: number; readonly tags: readonly string[] }) {
   return (
-    <div className="rounded border border-slate-200 bg-slate-50 p-2">
+    <div className="min-w-0 overflow-hidden rounded border border-slate-200 bg-slate-50 p-2">
       <div className="mb-1 text-[11px] text-slate-500">第 {index + 1} 行 / 标签</div>
       <div className="flex flex-wrap gap-1">
         {tags.map((tag, tagIndex) => (
-          <span key={`${tag}-${tagIndex}`} className="rounded border border-slate-200 bg-white px-2 py-0.5 text-xs text-slate-800">
+          <span
+            key={`${tag}-${tagIndex}`}
+            className="max-w-full break-words rounded border border-slate-200 bg-white px-2 py-0.5 text-xs text-slate-800 [overflow-wrap:anywhere]"
+          >
             {tag}
           </span>
         ))}

@@ -168,9 +168,9 @@ function MessageBubble({
 }) {
   const isAssistant = message.role === "assistant"
   return (
-    <div className={`flex ${isAssistant ? "justify-start" : "justify-end"}`}>
-      <div className={`max-w-[86%] rounded-lg px-3 py-2 text-sm ${isAssistant ? "bg-muted" : "bg-primary text-primary-foreground"}`}>
-        <div className="whitespace-pre-wrap leading-relaxed">{message.content}</div>
+    <div className={`flex min-w-0 ${isAssistant ? "justify-start" : "justify-end"}`}>
+      <div className={`min-w-0 max-w-[86%] overflow-hidden rounded-lg px-3 py-2 text-sm ${isAssistant ? "bg-muted" : "bg-primary text-primary-foreground"}`}>
+        <div className="whitespace-pre-wrap break-words leading-relaxed [overflow-wrap:anywhere]">{message.content}</div>
         {isAssistant && message.rows?.length ? <ModuleAiAppliedPreview applied={message.applied} rows={message.rows} /> : null}
         {isAssistant ? <ApplyButton message={message} onApply={onApply} /> : null}
       </div>
