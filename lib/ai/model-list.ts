@@ -73,7 +73,7 @@ async function getJson(url: string, headers: Readonly<Record<string, string>>): 
     return JSON.parse(text) as unknown
   } catch {
     if (looksLikeHtml(text)) {
-      throw new Error("AI 模型列表接口返回了 HTML 页面。请检查 Base URL 是否填成了网页地址，或是否多填了 /models、/chat/completions、/messages 等接口后缀。")
+      throw new Error("AI 模型列表接口返回了 HTML 页面。请检查 Base URL 是否填成了网页地址，或是否多填了 /models、/responses、/messages 等接口后缀。")
     }
     throw new Error("AI 模型列表接口响应不是合法 JSON")
   }

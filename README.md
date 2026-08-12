@@ -269,7 +269,7 @@ JSON 是简历数据备份格式。它适合：
 不同服务商示例：
 
 ```bash
-# OpenAI 或 OpenAI 兼容服务
+# OpenAI 或兼容 Responses API 的服务
 AI_PROVIDER=openai
 AI_BASE_URL=https://api.openai.com/v1
 AI_MODEL=gpt-4o-mini
@@ -304,7 +304,7 @@ SITE_PASSWORD=你的访问密码
 
 ### AI 返回格式错误
 
-AI 简历优化需要模型稳定返回结构化内容。可以优先尝试更稳定的模型，或检查自定义 OpenAI 兼容服务是否完整支持聊天补全格式。
+AI 简历优化需要模型稳定返回结构化内容。可以优先尝试更稳定的模型，或检查自定义 OpenAI 兼容服务是否完整支持 Responses API（`POST /responses`）。
 
 ### PDF 自动切换到浏览器打印
 
