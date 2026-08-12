@@ -9,13 +9,13 @@ import {
 } from "react"
 import { useToast } from "@/hooks/use-toast"
 import { withStoredAiRequestConfig } from "@/lib/ai/client-config-storage"
-import { createModuleRowsFromDrafts } from "@/lib/module-ai/draft-rows"
-import type { ModuleAiMessage, ModuleAiResponse, ModuleAiRowDraft } from "@/types/module-ai"
+import { applyModuleAiChanges } from "@/lib/module-ai/module-changes"
+import type { ModuleAiChange, ModuleAiMessage, ModuleAiResponse } from "@/types/module-ai"
 import type { ModuleContentRow, ResumeModule } from "@/types/resume"
 
 export interface UiModuleAiMessage extends ModuleAiMessage {
   readonly id: string
-  readonly rows?: readonly ModuleAiRowDraft[]
+  readonly changes?: readonly ModuleAiChange[]
   readonly applied?: boolean
 }
 
@@ -118,7 +118,7 @@ function handleRequestError(caught: unknown, options: SendMessageOptions): void 
 
 function applyRowsMessage(options: ApplyRowsMessageOptions): void {
   try {
-    options.onApplyRows(createModuleRowsFromDrafts(options.message.rows ?? []))
+    options.onApplyRows(applyModuleAiChanges(options.module, options.message.changes ?? []).rows)
     options.setMessages((prev) => markApplied(prev, options.message.id))
     options.toast({ title: "已应用 AI 内容", description: options.module.title || "当前模块" })
   } catch (caught) {
@@ -183,7 +183,7 @@ function finishRequest(
 }
 
 function createAssistantMessage(response: ModuleAiResponse): UiModuleAiMessage {
-  return { id: createMessageId("assistant"), role: "assistant", content: response.reply, rows: response.rows }
+  return { id: createMessageId("assistant"), role: "assistant", content: response.reply, changes: response.changes }
 }
 
 function createUiMessage(role: ModuleAiMessage["role"], content: string): UiModuleAiMessage {

@@ -46,7 +46,7 @@ function readResumeData(value: unknown): ResumeData {
   if (!Array.isArray(resume.modules)) {
     throw new Error("resumeData.modules 必须是数组")
   }
-  return resume as ResumeData
+  return resume as unknown as ResumeData
 }
 
 function readMessages(value: unknown): readonly GlobalAiMessage[] {

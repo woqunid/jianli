@@ -171,7 +171,7 @@ function MessageBubble({
     <div className={`flex min-w-0 ${isAssistant ? "justify-start" : "justify-end"}`}>
       <div className={`min-w-0 max-w-[86%] overflow-hidden rounded-lg px-3 py-2 text-sm ${isAssistant ? "bg-muted" : "bg-primary text-primary-foreground"}`}>
         <div className="whitespace-pre-wrap break-words leading-relaxed [overflow-wrap:anywhere]">{message.content}</div>
-        {isAssistant && message.rows?.length ? <ModuleAiAppliedPreview applied={message.applied} rows={message.rows} /> : null}
+        {isAssistant && message.changes?.length ? <ModuleAiAppliedPreview applied={message.applied} changes={message.changes} /> : null}
         {isAssistant ? <ApplyButton message={message} onApply={onApply} /> : null}
       </div>
     </div>
@@ -189,13 +189,13 @@ function ApplyButton({
     <Button
       size="sm"
       variant="outline"
-      disabled={message.applied || !message.rows?.length}
-      title={message.rows?.length ? "应用到当前模块" : "这条回复暂无可应用内容"}
+      disabled={message.applied || !message.changes?.length}
+      title={message.changes?.length ? "确认并应用到当前模块" : "这条回复暂无可应用内容"}
       onClick={() => onApply(message)}
       className="mt-2 h-7 gap-1 bg-background px-2 text-xs"
     >
       <Icon icon={message.applied ? "mdi:check" : "mdi:content-save-edit-outline"} className="h-3.5 w-3.5" />
-      {message.applied ? "已应用" : "应用"}
+      {message.applied ? "已应用" : "确认应用"}
     </Button>
   )
 }

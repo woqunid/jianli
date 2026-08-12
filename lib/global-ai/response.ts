@@ -1,8 +1,5 @@
-import type { GlobalAiResponse, GlobalAiModuleDraft } from "@/types/global-ai"
-import type { ModuleAiRowDraft } from "@/types/module-ai"
-
-const MAX_COLUMNS = 4
-const MIN_COLUMNS = 1
+import { readChanges } from "@/lib/module-ai/response"
+import type { GlobalAiModuleDraft, GlobalAiResponse } from "@/types/global-ai"
 
 export function parseGlobalAiResponseText(text: string): GlobalAiResponse {
   const parsed = parseJsonObject(text)
@@ -12,65 +9,24 @@ export function parseGlobalAiResponseText(text: string): GlobalAiResponse {
   }
 }
 
-function parseJsonObject(text: string): Record<string, unknown> {
-  if (!text.trim()) {
-    throw new Error("AI 服务没有返回内容")
-  }
-  const value = JSON.parse(text) as unknown
-  if (!value || typeof value !== "object" || Array.isArray(value)) {
-    throw new Error("AI 服务响应必须是 JSON 对象")
-  }
-  return value as Record<string, unknown>
-}
-
 function readDrafts(value: unknown): readonly GlobalAiModuleDraft[] {
-  if (!Array.isArray(value)) {
-    throw new Error("AI 服务响应必须包含 drafts 数组")
-  }
+  if (!Array.isArray(value)) throw new Error("AI 服务响应必须包含 drafts 数组")
   return value.map(readDraft)
 }
 
-function readDraft(value: unknown): GlobalAiModuleDraft {
-  const draft = readRecord(value, "drafts[]")
+function readDraft(value: unknown, index: number): GlobalAiModuleDraft {
+  const path = `drafts[${index}]`
+  const draft = readRecord(value, path)
   return {
-    moduleId: readString(draft.moduleId, "draft.moduleId"),
-    moduleName: readString(draft.moduleName, "draft.moduleName"),
-    rows: readRows(draft.rows),
+    moduleId: readString(draft.moduleId, `${path}.moduleId`),
+    moduleName: readString(draft.moduleName, `${path}.moduleName`),
+    changes: readChanges(draft.changes, `${path}.changes`),
   }
 }
 
-function readRows(value: unknown): readonly ModuleAiRowDraft[] {
-  if (!Array.isArray(value)) {
-    throw new Error("draft.rows 必须是数组")
-  }
-  return value.map(readRow)
-}
-
-function readRow(value: unknown): ModuleAiRowDraft {
-  const row = readRecord(value, "draft.rows[]")
-  const type = readString(row.type, "row.type")
-  if (type === "rich") {
-    return { type, columns: readColumns(row.columns) }
-  }
-  if (type === "tags") {
-    return { type, tags: readStringArray(row.tags, "row.tags") }
-  }
-  throw new Error(`不支持的 AI 行类型：${type}`)
-}
-
-function readColumns(value: unknown): readonly string[] {
-  const columns = readStringArray(value, "row.columns")
-  if (columns.length < MIN_COLUMNS || columns.length > MAX_COLUMNS) {
-    throw new Error(`AI 富文本行必须包含 ${MIN_COLUMNS}-${MAX_COLUMNS} 列`)
-  }
-  return columns
-}
-
-function readStringArray(value: unknown, path: string): readonly string[] {
-  if (!Array.isArray(value)) {
-    throw new Error(`${path} 必须是字符串数组`)
-  }
-  return value.map((item, index) => readString(item, `${path}[${index}]`))
+function parseJsonObject(text: string): Record<string, unknown> {
+  if (!text.trim()) throw new Error("AI 服务没有返回内容")
+  return readRecord(JSON.parse(text) as unknown, "AI 服务响应")
 }
 
 function readRecord(value: unknown, path: string): Record<string, unknown> {
@@ -81,8 +37,6 @@ function readRecord(value: unknown, path: string): Record<string, unknown> {
 }
 
 function readString(value: unknown, path: string): string {
-  if (typeof value !== "string" || !value.trim()) {
-    throw new Error(`${path} 必须是非空字符串`)
-  }
+  if (typeof value !== "string" || !value.trim()) throw new Error(`${path} 必须是非空字符串`)
   return value.trim()
 }

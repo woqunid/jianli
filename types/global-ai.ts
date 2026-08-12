@@ -1,4 +1,4 @@
-import type { ModuleAiRowDraft } from "@/types/module-ai"
+import type { ModuleAiChange } from "@/types/module-ai"
 import type { ResumeData } from "@/types/resume"
 
 export type GlobalAiMessageRole = "user" | "assistant"
@@ -11,7 +11,7 @@ export interface GlobalAiMessage {
 export interface GlobalAiModuleDraft {
   readonly moduleId: string
   readonly moduleName: string
-  readonly rows: readonly ModuleAiRowDraft[]
+  readonly changes: readonly ModuleAiChange[]
 }
 
 export interface GlobalAiRequest {

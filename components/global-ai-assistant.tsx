@@ -1,6 +1,5 @@
 "use client"
 
-import { useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -16,11 +15,12 @@ import { Badge } from "@/components/ui/badge"
 import { Icon } from "@iconify/react"
 import { useGlobalAiConversation, type UiGlobalAiMessage } from "./use-global-ai-conversation"
 import { useModuleAiWindow } from "./use-module-ai-window"
-import { createModuleRowsFromDrafts } from "@/lib/module-ai/draft-rows"
+import { applyModuleAiChanges } from "@/lib/module-ai/module-changes"
 import { useToast } from "@/hooks/use-toast"
 import type { ResumeData } from "@/types/resume"
 import type { GlobalAiModuleDraft } from "@/types/global-ai"
-import type { FormEvent, KeyboardEvent } from "react"
+import type { FormEvent, KeyboardEvent, PointerEvent as ReactPointerEvent } from "react"
+import ModuleAiAppliedPreview from "./module-ai-applied-preview"
 
 interface GlobalAiAssistantProps {
   readonly resumeData: ResumeData
@@ -86,7 +86,6 @@ function GlobalAiPanel({
     <div className="flex min-h-0 flex-1 flex-col">
       <ResumeContextSummary moduleCount={moduleCount} />
       <ChatMessages
-        actions={actions}
         state={state}
         resumeData={resumeData}
         onApplyResumeData={onApplyResumeData}
@@ -97,12 +96,10 @@ function GlobalAiPanel({
 }
 
 function ChatMessages({
-  actions,
   state,
   resumeData,
   onApplyResumeData,
 }: {
-  readonly actions: ReturnType<typeof useGlobalAiConversation>["actions"]
   readonly state: ReturnType<typeof useGlobalAiConversation>["state"]
   readonly resumeData: ResumeData
   readonly onApplyResumeData: (resumeData: ResumeData) => void
@@ -221,9 +218,9 @@ function DraftsPreview({
       if (!targetModule) {
         throw new Error(`未找到模块：${draft.moduleName}`)
       }
-      const newRows = createModuleRowsFromDrafts(draft.rows)
+      const updatedModule = applyModuleAiChanges(targetModule, draft.changes)
       const updatedModules = resumeData.modules.map((m) =>
-        m.id === draft.moduleId ? { ...m, rows: newRows } : m
+        m.id === draft.moduleId ? updatedModule : m
       )
       onApplyResumeData({ ...resumeData, modules: updatedModules })
       toast({ title: "已应用 AI 内容", description: draft.moduleName })
@@ -238,12 +235,12 @@ function DraftsPreview({
       let updatedResumeData = resumeData
       for (const draft of drafts) {
         const targetModule = updatedResumeData.modules.find((m) => m.id === draft.moduleId)
-        if (!targetModule) continue
-        const newRows = createModuleRowsFromDrafts(draft.rows)
+        if (!targetModule) throw new Error(`未找到模块：${draft.moduleName}`)
+        const updatedModule = applyModuleAiChanges(targetModule, draft.changes)
         updatedResumeData = {
           ...updatedResumeData,
           modules: updatedResumeData.modules.map((m) =>
-            m.id === draft.moduleId ? { ...m, rows: newRows } : m
+            m.id === draft.moduleId ? updatedModule : m
           ),
         }
       }
@@ -258,11 +255,11 @@ function DraftsPreview({
   return (
     <div className="mt-3 space-y-2 border-t border-muted-foreground/20 pt-3">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium">AI 生成的内容</span>
+        <span className="text-xs font-medium">待确认的精确修改</span>
         {drafts.length > 1 ? (
           <Button size="sm" variant="secondary" onClick={applyAll} className="h-6 gap-1 text-xs">
             <Icon icon="mdi:check-all" className="h-3 w-3" />
-            全部应用
+            确认全部应用
           </Button>
         ) : null}
       </div>
@@ -274,20 +271,9 @@ function DraftsPreview({
                 <Badge variant="outline" className="text-xs">
                   {draft.moduleName}
                 </Badge>
-                <span className="text-xs text-muted-foreground">{draft.rows.length} 行</span>
+                <span className="text-xs text-muted-foreground">{draft.changes.length} 项修改</span>
               </div>
-              <div className="text-xs text-muted-foreground">
-                {draft.rows.slice(0, 2).map((row, idx) => (
-                  <div key={idx} className="truncate">
-                    {row.type === "rich"
-                      ? row.columns.join(" · ")
-                      : row.type === "tags"
-                      ? row.tags.join("、")
-                      : ""}
-                  </div>
-                ))}
-                {draft.rows.length > 2 ? <div>...</div> : null}
-              </div>
+              <ModuleAiAppliedPreview changes={draft.changes} />
             </div>
             <Button
               size="sm"
@@ -296,7 +282,7 @@ function DraftsPreview({
               className="h-7 shrink-0 gap-1 text-xs"
             >
               <Icon icon="mdi:check" className="h-3 w-3" />
-              应用
+              确认应用
             </Button>
           </div>
         </Card>
@@ -329,7 +315,7 @@ function ErrorPanel({ message }: { readonly message: string }) {
   )
 }
 
-function ResizeHandle({ onPointerDown }: { readonly onPointerDown: (event: PointerEvent) => void }) {
+function ResizeHandle({ onPointerDown }: { readonly onPointerDown: (event: ReactPointerEvent<HTMLDivElement>) => void }) {
   return (
     <div
       onPointerDown={onPointerDown}
