@@ -11,7 +11,7 @@ import { useToast } from "@/hooks/use-toast"
 import { withStoredAiRequestConfig } from "@/lib/ai/client-config-storage"
 import { applyModuleAiChanges } from "@/lib/module-ai/module-changes"
 import type { ModuleAiChange, ModuleAiMessage, ModuleAiResponse } from "@/types/module-ai"
-import type { ModuleContentRow, ResumeModule } from "@/types/resume"
+import type { ModuleContentRow, ResumeData, ResumeModule } from "@/types/resume"
 
 export interface UiModuleAiMessage extends ModuleAiMessage {
   readonly id: string
@@ -36,6 +36,7 @@ export interface ModuleAiConversationActions {
 
 interface ModuleAiConversationProps {
   readonly module: ResumeModule
+  readonly resumeData: ResumeData
   readonly onApplyRows: (rows: ModuleContentRow[]) => void
 }
 
@@ -67,7 +68,7 @@ export function useModuleAiConversation(props: ModuleAiConversationProps): {
     if (!nextOpen) resetSession({ requestRef, setError, setInput, setIsLoading, setMessages })
   }
   const submit = () => {
-    void sendMessage({ input, isLoading, messages, module: props.module, requestRef, setError, setInput, setIsLoading, setMessages, toast })
+    void sendMessage({ input, isLoading, messages, module: props.module, resumeData: props.resumeData, requestRef, setError, setInput, setIsLoading, setMessages, toast })
   }
   const applyMessage = (message: UiModuleAiMessage) => {
     applyRowsMessage({ message, module: props.module, onApplyRows: props.onApplyRows, setMessages, toast })
@@ -91,7 +92,7 @@ async function sendMessage(options: SendMessageOptions): Promise<void> {
   const controller = new AbortController()
   options.requestRef.current = controller
   try {
-    const response = await requestModuleAi(options.module, nextMessages, controller.signal)
+    const response = await requestModuleAi(options.module, options.resumeData, nextMessages, controller.signal)
     options.setMessages([...nextMessages, createAssistantMessage(response)])
   } catch (caught) {
     handleRequestError(caught, options)
@@ -105,6 +106,7 @@ interface SendMessageOptions extends ConversationSetters {
   readonly isLoading: boolean
   readonly messages: readonly UiModuleAiMessage[]
   readonly module: ResumeModule
+  readonly resumeData: ResumeData
   readonly requestRef: MutableRefObject<AbortController | null>
   readonly toast: ReturnType<typeof useToast>["toast"]
 }
@@ -137,13 +139,14 @@ interface ApplyRowsMessageOptions {
 
 async function requestModuleAi(
   module: ResumeModule,
+  resumeData: ResumeData,
   messages: readonly UiModuleAiMessage[],
   signal: AbortSignal,
 ): Promise<ModuleAiResponse> {
   const response = await fetch("/api/ai/module-chat", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify(withStoredAiRequestConfig({ module, messages: messages.map(toApiMessage) })),
+    body: JSON.stringify(withStoredAiRequestConfig({ module, resumeData, messages: messages.map(toApiMessage) })),
     signal,
   })
   const data = parseResponseJson(await response.text())

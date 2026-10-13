@@ -21,6 +21,7 @@ import type { ResumeData } from "@/types/resume"
 import type { GlobalAiModuleDraft } from "@/types/global-ai"
 import type { FormEvent, KeyboardEvent, PointerEvent as ReactPointerEvent } from "react"
 import ModuleAiAppliedPreview from "./module-ai-applied-preview"
+import { useState } from "react"
 
 interface GlobalAiAssistantProps {
   readonly resumeData: ResumeData
@@ -182,13 +183,13 @@ function MessageBubble({
 }) {
   const isAssistant = message.role === "assistant"
   return (
-    <div className={`flex ${isAssistant ? "justify-start" : "justify-end"}`}>
+    <div className={`flex min-w-0 ${isAssistant ? "justify-start" : "justify-end"}`}>
       <div
-        className={`max-w-[86%] rounded-lg px-3 py-2 text-sm ${
+        className={`min-w-0 max-w-[86%] overflow-hidden rounded-lg px-3 py-2 text-sm ${
           isAssistant ? "bg-muted" : "bg-primary text-primary-foreground"
         }`}
       >
-        <div className="whitespace-pre-wrap leading-relaxed">{message.content}</div>
+        <div className="whitespace-pre-wrap break-words leading-relaxed [overflow-wrap:anywhere]">{message.content}</div>
         {isAssistant && message.drafts?.length ? (
           <DraftsPreview
             drafts={message.drafts}
@@ -211,8 +212,11 @@ function DraftsPreview({
   readonly onApplyResumeData: (resumeData: ResumeData) => void
 }) {
   const { toast } = useToast()
+  const [appliedModules, setAppliedModules] = useState<ReadonlySet<string>>(new Set())
+  const pendingDrafts = drafts.filter((draft) => !appliedModules.has(draft.moduleId))
 
   const applyDraft = (draft: GlobalAiModuleDraft) => {
+    if (appliedModules.has(draft.moduleId)) return
     try {
       const targetModule = resumeData.modules.find((m) => m.id === draft.moduleId)
       if (!targetModule) {
@@ -223,6 +227,7 @@ function DraftsPreview({
         m.id === draft.moduleId ? updatedModule : m
       )
       onApplyResumeData({ ...resumeData, modules: updatedModules })
+      setAppliedModules((previous) => new Set([...previous, draft.moduleId]))
       toast({ title: "已应用 AI 内容", description: draft.moduleName })
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
@@ -231,9 +236,10 @@ function DraftsPreview({
   }
 
   const applyAll = () => {
+    if (pendingDrafts.length === 0) return
     try {
       let updatedResumeData = resumeData
-      for (const draft of drafts) {
+      for (const draft of pendingDrafts) {
         const targetModule = updatedResumeData.modules.find((m) => m.id === draft.moduleId)
         if (!targetModule) throw new Error(`未找到模块：${draft.moduleName}`)
         const updatedModule = applyModuleAiChanges(targetModule, draft.changes)
@@ -245,7 +251,8 @@ function DraftsPreview({
         }
       }
       onApplyResumeData(updatedResumeData)
-      toast({ title: "已全部应用", description: `成功应用 ${drafts.length} 个模块的修改` })
+      setAppliedModules(new Set(drafts.map((draft) => draft.moduleId)))
+      toast({ title: "已全部应用", description: `成功应用 ${pendingDrafts.length} 个模块的修改` })
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
       toast({ title: "应用失败", description: message, variant: "destructive" })
@@ -257,7 +264,7 @@ function DraftsPreview({
       <div className="flex items-center justify-between">
         <span className="text-xs font-medium">待确认的精确修改</span>
         {drafts.length > 1 ? (
-          <Button size="sm" variant="secondary" onClick={applyAll} className="h-6 gap-1 text-xs">
+          <Button size="sm" variant="secondary" onClick={applyAll} disabled={pendingDrafts.length === 0} className="h-6 gap-1 text-xs">
             <Icon icon="mdi:check-all" className="h-3 w-3" />
             确认全部应用
           </Button>
@@ -273,12 +280,13 @@ function DraftsPreview({
                 </Badge>
                 <span className="text-xs text-muted-foreground">{draft.changes.length} 项修改</span>
               </div>
-              <ModuleAiAppliedPreview changes={draft.changes} />
+              <ModuleAiAppliedPreview changes={draft.changes} applied={appliedModules.has(draft.moduleId)} />
             </div>
             <Button
               size="sm"
               variant="outline"
               onClick={() => applyDraft(draft)}
+              disabled={appliedModules.has(draft.moduleId)}
               className="h-7 shrink-0 gap-1 text-xs"
             >
               <Icon icon="mdi:check" className="h-3 w-3" />
@@ -331,7 +339,7 @@ function handleSubmitEvent(event: FormEvent, submit: () => void) {
 }
 
 function handleMessageKeyDown(event: KeyboardEvent<HTMLTextAreaElement>, submit: () => void) {
-  if (event.key === "Enter" && !event.shiftKey) {
+  if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {
     event.preventDefault()
     submit()
   }

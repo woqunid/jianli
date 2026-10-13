@@ -1,4 +1,4 @@
-import type { ResumeModule } from "@/types/resume"
+import type { JSONContent, ResumeData, ResumeModule } from "@/types/resume"
 
 export type ModuleAiMessageRole = "user" | "assistant"
 
@@ -9,7 +9,7 @@ export interface ModuleAiMessage {
 
 export interface ModuleAiRichRowDraft {
   readonly type: "rich"
-  readonly columns: readonly string[]
+  readonly columns: readonly (string | JSONContent)[]
 }
 
 export interface ModuleAiTagsRowDraft {
@@ -20,6 +20,12 @@ export interface ModuleAiTagsRowDraft {
 export type ModuleAiRowDraft = ModuleAiRichRowDraft | ModuleAiTagsRowDraft
 
 export type ModuleAiChange =
+  | {
+      readonly type: "replaceElement"
+      readonly rowId: string
+      readonly elementId: string
+      readonly content: JSONContent
+    }
   | {
       readonly type: "replaceText"
       readonly rowId: string
@@ -49,6 +55,7 @@ export type ModuleAiChange =
 
 export interface ModuleAiRequest {
   readonly module: ResumeModule
+  readonly resumeData: ResumeData
   readonly messages: readonly ModuleAiMessage[]
 }
 

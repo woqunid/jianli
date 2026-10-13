@@ -242,6 +242,7 @@ export default function ResumeBuilder({ initialData, template = "default", onCha
 
               {/* 简历模块编辑 */}
               <ModuleEditor
+                resumeData={editorState.resumeData}
                 modules={editorState.resumeData.modules}
                 onUpdate={(modules) => updateResumeData({ modules })}
               />

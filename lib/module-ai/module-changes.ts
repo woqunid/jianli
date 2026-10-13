@@ -1,5 +1,6 @@
 import type { JSONContent, ModuleContentElement, ModuleContentRow, ResumeModule } from "@/types/resume"
 import type { ModuleAiChange, ModuleAiRowDraft } from "@/types/module-ai"
+import { createModuleAiContent } from "./rich-content"
 
 const MAX_COLUMNS = 4
 const MIN_COLUMNS = 1
@@ -43,7 +44,9 @@ function applyChange(rows: ModuleContentRow[], change: ModuleAiChange): ModuleCo
   const elementIndex = current.elements.findIndex((element) => element.id === change.elementId)
   if (elementIndex < 0) throw new Error(`未找到目标元素：${change.elementId}`)
   const element = current.elements[elementIndex]
-  const content = replaceTextPreservingFormat(element.content, change.before, change.after)
+  const content = change.type === "replaceElement"
+    ? structuredClone(change.content)
+    : replaceTextPreservingFormat(element.content, change.before, change.after)
   const elements = [...current.elements]
   elements[elementIndex] = { ...element, content }
   rows[rowIndex] = { ...current, elements }
@@ -82,21 +85,11 @@ function createRow(draft: ModuleAiRowDraft, order: number): ModuleContentRow {
   }
 }
 
-function createElement(text: string, columnIndex: number): ModuleContentElement {
+function createElement(text: string | JSONContent, columnIndex: number): ModuleContentElement {
   return {
     id: createId("ai-elem"),
     columnIndex,
-    content: createTextContent(text),
-  }
-}
-
-function createTextContent(value: string): JSONContent {
-  return {
-    type: "doc",
-    content: value.split(/\r?\n/).map((line) => ({
-      type: "paragraph",
-      content: line ? [{ type: "text", text: line }] : [],
-    })),
+    content: createModuleAiContent(text),
   }
 }
 

@@ -2,10 +2,11 @@ import { NextResponse } from "next/server"
 import { createAiChatCompletion } from "@/lib/ai/client"
 import { AiProviderError } from "@/lib/ai/http"
 import { readAiRequestConfigFromBody } from "@/lib/ai/request-config"
-import { buildModuleAiMessages } from "@/lib/module-ai/prompt"
+import { buildModuleAiMessages, MODULE_AI_MAX_TOKENS } from "@/lib/module-ai/prompt"
+import { applyModuleAiChanges } from "@/lib/module-ai/module-changes"
 import { parseModuleAiResponseText } from "@/lib/module-ai/response"
 import type { ModuleAiMessage, ModuleAiRequest } from "@/types/module-ai"
-import type { ResumeModule } from "@/types/resume"
+import type { ResumeData, ResumeModule } from "@/types/resume"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -24,8 +25,11 @@ export async function POST(req: Request) {
       messages: buildModuleAiMessages(request),
       requestConfig,
       temperature: MODULE_AI_TEMPERATURE,
+      maxTokens: MODULE_AI_MAX_TOKENS,
     })
-    return NextResponse.json(parseModuleAiResponseText(result.text))
+    const response = parseModuleAiResponseText(result.text)
+    if (response.changes.length) applyModuleAiChanges(request.module, response.changes)
+    return NextResponse.json(response)
   } catch (error) {
     const status = error instanceof AiProviderError ? error.status : HTTP_STATUS_INTERNAL_ERROR
     const message = error instanceof Error ? error.message : String(error)
@@ -35,8 +39,14 @@ export async function POST(req: Request) {
 
 function parseRequest(value: unknown): ModuleAiRequest {
   const input = readRecord(value, "请求体")
+  const resumeData = readRecord(input.resumeData, "resumeData")
+  if (!Array.isArray(resumeData.modules)) throw new Error("resumeData.modules 必须是数组")
+  const module = readModule(input.module)
+  const targetModule = resumeData.modules.find((item) => item && item.id === module.id)
+  if (!targetModule) throw new Error("当前模块不在简历正文模块中")
   return {
-    module: readModule(input.module),
+    module: readModule(targetModule),
+    resumeData: resumeData as unknown as ResumeData,
     messages: readMessages(input.messages),
   }
 }

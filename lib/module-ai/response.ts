@@ -1,4 +1,6 @@
 import type { ModuleAiChange, ModuleAiResponse, ModuleAiRowDraft } from "@/types/module-ai"
+import { readModuleAiContent } from "./rich-content"
+import type { JSONContent } from "@/types/resume"
 
 const MAX_COLUMNS = 4
 const MIN_COLUMNS = 1
@@ -20,6 +22,14 @@ function readChange(value: unknown, path: string): ModuleAiChange {
   const change = readRecord(value, path)
   const type = readString(change.type, `${path}.type`)
 
+  if (type === "replaceElement") {
+    return {
+      type,
+      rowId: readString(change.rowId, `${path}.rowId`),
+      elementId: readString(change.elementId, `${path}.elementId`),
+      content: readModuleAiContent(change.content, `${path}.content`),
+    }
+  }
   if (type === "replaceText") {
     return {
       type,
@@ -64,8 +74,11 @@ function readRow(value: unknown, path: string): ModuleAiRowDraft {
   throw new Error(`不支持的 AI 行类型：${type}`)
 }
 
-function readColumns(value: unknown, path: string): readonly string[] {
-  const columns = readStringArray(value, path)
+function readColumns(value: unknown, path: string): readonly (string | JSONContent)[] {
+  if (!Array.isArray(value)) throw new Error(`${path} 必须是列数组`)
+  const columns = value.map((column, index) => typeof column === "string"
+    ? readString(column, `${path}[${index}]`)
+    : readModuleAiContent(column, `${path}[${index}]`))
   if (columns.length < MIN_COLUMNS || columns.length > MAX_COLUMNS) {
     throw new Error(`AI 富文本行必须包含 ${MIN_COLUMNS}-${MAX_COLUMNS} 列`)
   }

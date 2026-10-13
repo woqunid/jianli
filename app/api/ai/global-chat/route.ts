@@ -4,6 +4,8 @@ import { AiProviderError } from "@/lib/ai/http"
 import { readAiRequestConfigFromBody } from "@/lib/ai/request-config"
 import { buildGlobalAiMessages } from "@/lib/global-ai/prompt"
 import { parseGlobalAiResponseText } from "@/lib/global-ai/response"
+import { MODULE_AI_MAX_TOKENS } from "@/lib/module-ai/prompt"
+import { applyModuleAiChanges } from "@/lib/module-ai/module-changes"
 import type { GlobalAiMessage, GlobalAiRequest } from "@/types/global-ai"
 import type { ResumeData } from "@/types/resume"
 
@@ -24,8 +26,18 @@ export async function POST(req: Request) {
       messages: buildGlobalAiMessages(request),
       requestConfig,
       temperature: GLOBAL_AI_TEMPERATURE,
+      maxTokens: MODULE_AI_MAX_TOKENS,
     })
-    return NextResponse.json(parseGlobalAiResponseText(result.text))
+    const response = parseGlobalAiResponseText(result.text)
+    const moduleIds = new Set<string>()
+    for (const draft of response.drafts) {
+      if (moduleIds.has(draft.moduleId)) throw new Error(`AI 返回了重复模块草稿：${draft.moduleId}`)
+      moduleIds.add(draft.moduleId)
+      const module = request.resumeData.modules.find((module) => module.id === draft.moduleId)
+      if (!module) throw new Error(`AI 修改的目标不是现有正文模块：${draft.moduleId}`)
+      applyModuleAiChanges(module, draft.changes)
+    }
+    return NextResponse.json(response)
   } catch (error) {
     const status = error instanceof AiProviderError ? error.status : HTTP_STATUS_INTERNAL_ERROR
     const message = error instanceof Error ? error.message : String(error)

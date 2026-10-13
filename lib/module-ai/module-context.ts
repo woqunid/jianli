@@ -1,5 +1,28 @@
 import { readModulePlainText } from "@/lib/ai/resume-requirements"
-import type { JSONContent, ResumeModule } from "@/types/resume"
+import type { JSONContent, ResumeData, ResumeModule } from "@/types/resume"
+import { FONT_FAMILIES, FONT_SIZES, TEXT_ALIGNMENTS } from "@/lib/rich-text-options"
+
+export function serializeResumeContext(resume: ResumeData) {
+  return {
+    title: resume.title,
+    centerTitle: resume.centerTitle ?? false,
+    jobIntention: resume.jobIntentionSection ?? null,
+    personalInfo: resume.personalInfoSection,
+    modules: resume.modules.map(serializeModuleContext),
+  }
+}
+
+export const MODULE_AI_LAYOUT_CAPABILITIES = {
+  rowTypes: ["rich", "tags"],
+  columns: [1, 2, 3, 4],
+  nodes: ["doc", "paragraph", "bulletList", "orderedList", "listItem", "text", "hardBreak"],
+  marks: ["bold", "italic", "underline", "strike", "code", "textStyle", "link"],
+  textAlign: TEXT_ALIGNMENTS,
+  fontFamily: FONT_FAMILIES.map((font) => font.value),
+  fontSize: FONT_SIZES.map((size) => `${size}pt`),
+  color: "十六进制颜色，例如 #000000",
+  linkProtocols: ["http:", "https:", "mailto:", "tel:"],
+} as const
 
 export function serializeModuleContext(module: ResumeModule) {
   return {

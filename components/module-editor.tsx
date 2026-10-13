@@ -15,7 +15,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { Icon } from "@iconify/react"
-import type { ResumeModule, ModuleContentRow, ModuleContentElement } from "@/types/resume"
+import type { ResumeData, ResumeModule, ModuleContentRow, ModuleContentElement } from "@/types/resume"
 import IconPicker from "./icon-picker"
 import ModuleAiDialog from "./module-ai-dialog"
 import FloatingActionBar from "./floating-action-bar"
@@ -24,6 +24,7 @@ import TagInput from "./tag-input"
 import { DragDropContext, Droppable, Draggable, DropResult, DraggableProvidedDragHandleProps } from "@hello-pangea/dnd"
 
 interface ModuleEditorProps {
+  resumeData: ResumeData
   modules: ResumeModule[]
   onUpdate: (modules: ResumeModule[]) => void
 }
@@ -88,7 +89,7 @@ const createNewTagsRow = (order: number): ModuleContentRow => {
   }
 }
 
-export default function ModuleEditor({ modules, onUpdate }: ModuleEditorProps) {
+export default function ModuleEditor({ modules, resumeData, onUpdate }: ModuleEditorProps) {
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set())
 
   /**
@@ -189,6 +190,7 @@ export default function ModuleEditor({ modules, onUpdate }: ModuleEditorProps) {
                       >
                         <ModuleItem
                           module={module}
+                          resumeData={resumeData}
                           isExpanded={expandedModules.has(module.id)}
                           dragHandleProps={provided.dragHandleProps}
                           onToggle={() => toggleModule(module.id)}
@@ -220,6 +222,7 @@ export default function ModuleEditor({ modules, onUpdate }: ModuleEditorProps) {
  */
 interface ModuleItemProps {
   module: ResumeModule
+  resumeData: ResumeData
   isExpanded: boolean
   dragHandleProps: DraggableProvidedDragHandleProps | null
   onToggle: () => void
@@ -229,6 +232,7 @@ interface ModuleItemProps {
 
 function ModuleItem({
   module,
+  resumeData,
   isExpanded,
   dragHandleProps,
   onToggle,
@@ -320,7 +324,7 @@ function ModuleItem({
               icon={isExpanded ? "mdi:chevron-up" : "mdi:chevron-down"}
               className="w-4 h-4 text-muted-foreground ml-auto"
             />
-            <ModuleAiDialog module={module} onApplyRows={(rows) => onUpdate({ rows })} />
+            <ModuleAiDialog module={module} resumeData={resumeData} onApplyRows={(rows) => onUpdate({ rows })} />
             <Button
               size="sm"
               variant="ghost"

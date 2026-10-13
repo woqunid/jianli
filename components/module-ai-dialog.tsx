@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog"
 import { Textarea } from "@/components/ui/textarea"
 import { readModulePlainText } from "@/lib/ai/resume-requirements"
-import type { ResumeModule } from "@/types/resume"
+import type { ResumeData, ResumeModule } from "@/types/resume"
 import { Icon } from "@iconify/react"
 import ModuleAiAppliedPreview from "./module-ai-applied-preview"
 import { useModuleAiWindow } from "./use-module-ai-window"
@@ -25,6 +25,7 @@ import {
 
 interface ModuleAiDialogProps {
   readonly module: ResumeModule
+  readonly resumeData: ResumeData
   readonly onApplyRows: (rows: ResumeModule["rows"]) => void
 }
 

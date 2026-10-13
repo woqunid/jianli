@@ -4,6 +4,8 @@ import { useState } from "react"
 import type { ReactNode } from "react"
 import { Icon } from "@iconify/react"
 import type { ModuleAiChange, ModuleAiRowDraft } from "@/types/module-ai"
+import { createModuleAiContent } from "@/lib/module-ai/rich-content"
+import RichTextRenderer from "./rich-text-renderer"
 
 interface ModuleAiAppliedPreviewProps {
   readonly applied?: boolean
@@ -39,6 +41,13 @@ export default function ModuleAiAppliedPreview({ applied = false, changes }: Mod
 }
 
 function ChangePreview({ change, index }: { readonly change: ModuleAiChange; readonly index: number }) {
+  if (change.type === "replaceElement") {
+    return (
+      <PreviewFrame title={`${index + 1}. 修改指定列文本`} detail={`行 ${shortId(change.rowId)} / 元素 ${shortId(change.elementId)}`}>
+        <RichTextRenderer content={change.content} />
+      </PreviewFrame>
+    )
+  }
   if (change.type === "replaceText") {
     return (
       <PreviewFrame title={`${index + 1}. 修改指定列文本`} detail={`行 ${shortId(change.rowId)} / 元素 ${shortId(change.elementId)}`}>
@@ -87,7 +96,11 @@ function RowDraftPreview({ row }: { readonly row: ModuleAiRowDraft }) {
   }
   return (
     <div className="grid gap-1" style={{ gridTemplateColumns: `repeat(${row.columns.length}, minmax(0, 1fr))` }}>
-      {row.columns.map((column, index) => <div className="break-words rounded bg-white px-2 py-1" key={index}>{column}</div>)}
+      {row.columns.map((column, index) => (
+        <div className="break-words rounded bg-white px-2 py-1" key={index}>
+          <RichTextRenderer content={createModuleAiContent(column)} />
+        </div>
+      ))}
     </div>
   )
 }
