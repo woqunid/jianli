@@ -193,5 +193,8 @@ function markApplied(messages: readonly UiModuleAiMessage[], messageId: string):
 }
 
 function toApiMessage(message: UiModuleAiMessage): ModuleAiMessage {
-  return { role: message.role, content: message.content }
+  const content = message.role === "assistant" && message.changes
+    ? JSON.stringify({ reply: message.content, changes: message.changes })
+    : message.content
+  return { role: message.role, content }
 }

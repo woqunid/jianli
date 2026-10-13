@@ -179,5 +179,8 @@ function isAbortError(value: unknown): boolean {
 }
 
 function toApiMessage(message: UiGlobalAiMessage): GlobalAiMessage {
-  return { role: message.role, content: message.content }
+  const content = message.role === "assistant" && message.drafts
+    ? JSON.stringify({ reply: message.content, drafts: message.drafts })
+    : message.content
+  return { role: message.role, content }
 }

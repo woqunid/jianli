@@ -27,6 +27,8 @@ const { readResponsesStream } = require('../lib/ai/responses-stream.ts')
 const { callOpenAi, callAnthropic, callGemini } = require('../lib/ai/providers.ts')
 const { readAiConversation } = require('../lib/ai/conversation-client.ts')
 const { createConversationStream } = require('../lib/ai/conversation-stream.ts')
+const { useModuleAiConversation } = require('../components/module-ai-conversation.ts')
+const { useGlobalAiConversation } = require('../components/use-global-ai-conversation.ts')
 
 const doc = (text, attrs, marks) => ({
   type: 'doc', content: [{ type: 'paragraph', ...(attrs ? { attrs } : {}),
@@ -288,3 +290,75 @@ test('Anthropic and Gemini stream text while keeping thinking content out of the
   assert.equal((await callGemini({ config: { ...config, provider }, options })).text, '你好')
   assert.deepEqual(replies, ['你好', '你好'])
 })
+
+function conversationHarness(t, hook, props) {
+  const react = require('react')
+  const slots = []
+  let cursor = 0
+  t.mock.method(react, 'useRef', (initial) => {
+    const index = cursor++
+    if (!(index in slots)) slots[index] = { current: initial }
+    return slots[index]
+  })
+  t.mock.method(react, 'useState', (initial) => {
+    const index = cursor++
+    if (!(index in slots)) slots[index] = initial
+    return [slots[index], (next) => { slots[index] = typeof next === 'function' ? next(slots[index]) : next }]
+  })
+  t.mock.method(require('../hooks/use-toast.ts'), 'useToast', () => ({ toast() {} }))
+  t.mock.method(require('../lib/ai/client-config-storage.ts'), 'withStoredAiRequestConfig', (body) => body)
+  const render = () => { cursor = 0; return hook(props) }
+  const send = async (input) => {
+    render().actions.updateInput(input)
+    render().actions.submit()
+    assert.equal(render().state.isLoading, true)
+    for (let attempt = 0; attempt < 20 && render().state.isLoading; attempt++) await new Promise(setImmediate)
+    const { state } = render()
+    assert.equal(state.isLoading, false, 'completion must unlock the next send')
+    assert.equal(state.error, null)
+    return state.messages.at(-1)
+  }
+  return { render, send }
+}
+
+for (const scope of ['module', 'global']) {
+  test(`${scope} conversation can send again with the complete previous draft and current resume`, async (t) => {
+    const changes = [{ type: 'insertRow', row: { type: 'rich', columns: [richList] } }]
+    const output = scope === 'module'
+      ? { reply: '已生成项目要点', changes }
+      : { reply: '已生成项目要点', drafts: [{ moduleId: project.id, moduleName: project.title, changes }] }
+    const route = scope === 'module' ? moduleRoute : globalRoute
+    const payloads = []
+    t.mock.method(globalThis, 'fetch', async (url, options) => {
+      if (url.startsWith('/api/ai/')) return route.POST(request(JSON.parse(options.body)))
+      payloads.push(JSON.parse(options.body))
+      return streamResponse([
+        { type: 'response.output_text.delta', delta: JSON.stringify(output) },
+        { type: 'response.completed', response: { output_text: JSON.stringify(output) } },
+      ].map((event) => 'data: ' + JSON.stringify(event) + '\n\n').join(''))
+    })
+    const props = { module: project, resumeData: resume, onApplyRows() {} }
+    const hook = scope === 'module' ? useModuleAiConversation : useGlobalAiConversation
+    const session = conversationHarness(t, hook, props)
+    session.render().actions.updateOpen(true)
+    await session.send('生成项目要点')
+    await session.send('把刚才的草稿再精简一些')
+    assert.equal(payloads.length, 2)
+    assert.equal(session.render().state.messages.length, 4)
+    const secondHistory = payloads[1].input.slice(2)
+    assert.deepEqual(secondHistory.map((message) => message.role), ['user', 'assistant', 'user'])
+    assert.deepEqual(JSON.parse(secondHistory[1].content), output, 'the next turn must retain the generated content and layout')
+    assert.equal(secondHistory[2].content, '把刚才的草稿再精简一些')
+    assert.deepEqual(props.resumeData, resume, 'unconfirmed drafts must not change the resume')
+
+    const updatedProject = applyModuleAiChanges(project, changes)
+    props.module = updatedProject
+    props.resumeData = { ...resume, modules: [updatedProject, skills] }
+    await session.send('根据当前已应用内容继续优化')
+    const context = JSON.parse(payloads[2].input[1].content.split('\n')[1])
+    assert.equal(context.resume.modules[0].rows.length, updatedProject.rows.length)
+    assert.equal(payloads[2].input.at(-1).content, '根据当前已应用内容继续优化')
+    session.render().actions.updateOpen(false)
+    assert.equal(session.render().state.messages.length, 0)
+  })
+}
