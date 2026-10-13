@@ -10,21 +10,33 @@ export class AiProviderError extends Error {
   }
 }
 
-export async function postJson(
+export async function postResponse(
   url: string,
   headers: Readonly<Record<string, string>>,
   body: unknown,
-): Promise<unknown> {
+  signal?: AbortSignal,
+): Promise<Response> {
   const response = await fetch(url, {
     method: "POST",
     headers: { ...JSON_HEADERS, ...headers },
     body: JSON.stringify(body),
+    signal,
   });
-  const text = await response.text();
-
   if (!response.ok) {
+    const text = await response.text();
     throw new AiProviderError(response.status, `AI 服务请求失败（状态码 ${response.status}）：${text || response.statusText}`);
   }
+  return response;
+}
+
+export async function postJson(
+  url: string,
+  headers: Readonly<Record<string, string>>,
+  body: unknown,
+  signal?: AbortSignal,
+): Promise<unknown> {
+  const response = await postResponse(url, headers, body, signal);
+  const text = await response.text();
 
   if (!text) {
     return {};

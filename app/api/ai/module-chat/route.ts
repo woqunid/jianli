@@ -4,6 +4,7 @@ import { AiProviderError } from "@/lib/ai/http"
 import { readAiRequestConfigFromBody } from "@/lib/ai/request-config"
 import { buildModuleAiMessages, MODULE_AI_MAX_TOKENS } from "@/lib/module-ai/prompt"
 import { applyModuleAiChanges } from "@/lib/module-ai/module-changes"
+import { createConversationStream } from "@/lib/ai/conversation-stream"
 import { parseModuleAiResponseText } from "@/lib/module-ai/response"
 import type { ModuleAiMessage, ModuleAiRequest } from "@/types/module-ai"
 import type { ResumeData, ResumeModule } from "@/types/resume"
@@ -21,15 +22,20 @@ export async function POST(req: Request) {
     })
     const request = parseRequest(body)
     const requestConfig = readAiRequestConfigFromBody(body)
-    const result = await createAiChatCompletion({
-      messages: buildModuleAiMessages(request),
-      requestConfig,
-      temperature: MODULE_AI_TEMPERATURE,
-      maxTokens: MODULE_AI_MAX_TOKENS,
+    return createConversationStream(req.signal, async (streamOptions) => {
+      const result = await createAiChatCompletion({
+        ...streamOptions,
+        messages: buildModuleAiMessages(request),
+        requestConfig,
+        temperature: MODULE_AI_TEMPERATURE,
+        maxTokens: MODULE_AI_MAX_TOKENS,
+        stream: true,
+        jsonResponse: true,
+      })
+      const response = parseModuleAiResponseText(result.text)
+      if (response.changes.length) applyModuleAiChanges(request.module, response.changes)
+      return response
     })
-    const response = parseModuleAiResponseText(result.text)
-    if (response.changes.length) applyModuleAiChanges(request.module, response.changes)
-    return NextResponse.json(response)
   } catch (error) {
     const status = error instanceof AiProviderError ? error.status : HTTP_STATUS_INTERNAL_ERROR
     const message = error instanceof Error ? error.message : String(error)

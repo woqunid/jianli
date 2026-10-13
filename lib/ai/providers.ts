@@ -1,4 +1,6 @@
-import { postJson, requireString } from "./http";
+import { postJson, postResponse, requireString } from "./http";
+import { readResponsesStream } from "./responses-stream";
+import { readAiEventStream } from "./event-stream";
 import type { AiChatResult, AiMessage, ProviderRequest } from "./types";
 
 const DEFAULT_MAX_TOKENS = 1024;
@@ -69,10 +71,19 @@ export async function callOpenAi(request: ProviderRequest): Promise<AiChatResult
     input: options.messages,
     temperature: options.temperature,
     max_output_tokens: getMaxTokens(options.maxTokens),
+    stream: options.stream,
+    ...(options.jsonResponse ? { text: { format: { type: "json_object" } } } : {}),
   };
-  const data = await postJson(`${config.baseUrl}/responses`, {
-    authorization: `Bearer ${config.apiKey}`,
-  }, payload);
+  const headers = { authorization: `Bearer ${config.apiKey}` };
+  let data: unknown;
+  if (options.stream) {
+    const response = await postResponse(`${config.baseUrl}/responses`, headers, payload, options.signal);
+    data = response.headers.get("content-type")?.includes("text/event-stream")
+      ? await readResponsesStream(response, options.onTextDelta)
+      : await response.json();
+  } else {
+    data = await postJson(`${config.baseUrl}/responses`, headers, payload, options.signal);
+  }
   const text = readResponsesText(data);
   return { provider: config.provider, model: config.model, text };
 }
@@ -87,10 +98,30 @@ export async function callAnthropic(request: ProviderRequest): Promise<AiChatRes
     temperature: options.temperature,
     ...(system ? { system } : {}),
   };
-  const data = await postJson(`${config.baseUrl}/messages`, {
+  const headers = {
     "x-api-key": config.apiKey,
     "anthropic-version": ANTHROPIC_VERSION,
-  }, payload);
+  };
+  if (options.stream) {
+    const response = await postResponse(`${config.baseUrl}/messages`, headers, { ...payload, stream: true }, options.signal);
+    let text = "";
+    const result = await readAiEventStream<string>(response, (event) => {
+      if (event.type === "error") throw new Error(`AI 流式响应失败：${getByPath(event, ["error", "message"])}`);
+      const delta = event.type === "content_block_start"
+        ? getByPath(event, ["content_block", "text"])
+        : getByPath(event, ["delta", "type"]) === "text_delta" ? getByPath(event, ["delta", "text"]) : undefined;
+      if (typeof delta === "string" && delta) {
+        text += delta;
+        options.onTextDelta?.(delta);
+      }
+      if (event.type === "message_delta" && getByPath(event, ["delta", "stop_reason"]) === "max_tokens") {
+        throw new Error("AI 服务输出不完整：max_tokens");
+      }
+      return event.type === "message_stop" ? requireString(text, "text") : undefined;
+    });
+    return { provider: config.provider, model: config.model, text: result };
+  }
+  const data = await postJson(`${config.baseUrl}/messages`, headers, payload, options.signal);
   const text = requireString(getByPath(data, ["content", 0, "text"]), "content[0].text");
   return { provider: config.provider, model: config.model, text };
 }
@@ -110,12 +141,34 @@ export async function callGemini(request: ProviderRequest): Promise<AiChatResult
     generationConfig: {
       temperature: options.temperature,
       maxOutputTokens: getMaxTokens(options.maxTokens),
+      ...(options.jsonResponse ? { responseMimeType: "application/json" } : {}),
     },
     ...(system ? { systemInstruction: { parts: [{ text: system }] } } : {}),
   };
-  const data = await postJson(`${config.baseUrl}/models/${config.model}:generateContent`, {
-    "x-goog-api-key": config.apiKey,
-  }, payload);
+  const headers = { "x-goog-api-key": config.apiKey };
+  if (options.stream) {
+    const response = await postResponse(`${config.baseUrl}/models/${config.model}:streamGenerateContent?alt=sse`, headers, payload, options.signal);
+    let text = "";
+    const result = await readAiEventStream<string>(response, (event) => {
+      const error = getByPath(event, ["error", "message"]);
+      if (error) throw new Error(`AI 流式响应失败：${error}`);
+      const parts = getByPath(event, ["candidates", 0, "content", "parts"]);
+      if (Array.isArray(parts)) {
+        for (const part of parts) {
+          const delta = getByPath(part, ["text"]);
+          if (getByPath(part, ["thought"]) !== true && typeof delta === "string") {
+            text += delta;
+            options.onTextDelta?.(delta);
+          }
+        }
+      }
+      const reason = getByPath(event, ["candidates", 0, "finishReason"]);
+      if (typeof reason === "string" && reason !== "STOP") throw new Error(`AI 服务输出不完整：${reason}`);
+      return reason === "STOP" ? requireString(text, "text") : undefined;
+    });
+    return { provider: config.provider, model: config.model, text: result };
+  }
+  const data = await postJson(`${config.baseUrl}/models/${config.model}:generateContent`, headers, payload, options.signal);
   const text = requireString(getByPath(data, ["candidates", 0, "content", "parts", 0, "text"]), "candidates[0].content.parts[0].text");
   return { provider: config.provider, model: config.model, text };
 }

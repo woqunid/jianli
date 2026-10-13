@@ -15,6 +15,10 @@ export interface AiChatOptions {
   readonly requestConfig?: AiRequestConfig;
   readonly temperature?: number;
   readonly maxTokens?: number;
+  readonly stream?: boolean;
+  readonly jsonResponse?: boolean;
+  readonly onTextDelta?: (delta: string) => void;
+  readonly signal?: AbortSignal;
 }
 
 export interface AiConfig {

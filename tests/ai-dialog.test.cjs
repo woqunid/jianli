@@ -23,6 +23,10 @@ const { applyModuleAiChanges } = require('../lib/module-ai/module-changes.ts')
 const { buildModuleAiMessages, MODULE_AI_MAX_TOKENS } = require('../lib/module-ai/prompt.ts')
 const moduleRoute = require('../app/api/ai/module-chat/route.ts')
 const globalRoute = require('../app/api/ai/global-chat/route.ts')
+const { readResponsesStream } = require('../lib/ai/responses-stream.ts')
+const { callOpenAi, callAnthropic, callGemini } = require('../lib/ai/providers.ts')
+const { readAiConversation } = require('../lib/ai/conversation-client.ts')
+const { createConversationStream } = require('../lib/ai/conversation-stream.ts')
 
 const doc = (text, attrs, marks) => ({
   type: 'doc', content: [{ type: 'paragraph', ...(attrs ? { attrs } : {}),
@@ -133,13 +137,15 @@ test('long module input reaches the model with full context and formatted output
     assert.equal(payload.input.at(-1).content, longInput)
     assert.ok(payload.input[1].content.includes('前端开发工程师'))
     assert.equal(payload.max_output_tokens, MODULE_AI_MAX_TOKENS)
+    assert.equal(payload.stream, true)
+    assert.deepEqual(payload.text, { format: { type: 'json_object' } })
     return Response.json({ output_text: JSON.stringify({ reply: '已优化项目描述', changes: [
       { type: 'insertRow', row: { type: 'rich', columns: [richList] } },
     ] }) })
   })
   const response = await moduleRoute.POST(request({ module: project, resumeData: resume, messages: [{ role: 'user', content: longInput }] }))
   assert.equal(response.status, 200)
-  const data = await response.json()
+  const data = await readAiConversation(response, () => {})
   assert.equal(applyModuleAiChanges(project, data.changes).rows.length, 2)
 })
 
@@ -148,8 +154,7 @@ test('module endpoint cannot apply changes to a different module from the contex
     { type: 'replaceTags', rowId: 'skill-row', tags: ['Vue'] },
   ] }) }))
   const response = await moduleRoute.POST(request({ module: project, resumeData: resume, messages: [{ role: 'user', content: '优化项目' }] }))
-  assert.equal(response.status, 500)
-  assert.match((await response.json()).error, /未找到目标行/)
+  await assert.rejects(readAiConversation(response, () => {}), /未找到目标行/)
   assert.deepEqual(skills.rows[0].tags, ['React', 'TypeScript'])
 })
 
@@ -157,14 +162,129 @@ test('global endpoint accepts existing body modules and rejects metadata or dupl
   let drafts = [{ moduleId: 'skills', moduleName: '技能', changes: [{ type: 'replaceTags', rowId: 'skill-row', tags: ['React', 'TypeScript', 'Next.js'] }] }]
   t.mock.method(globalThis, 'fetch', async () => Response.json({ output_text: JSON.stringify({ reply: '已生成修改', drafts }) }))
   const body = { resumeData: resume, messages: [{ role: 'user', content: '完善技能' }] }
-  assert.equal((await globalRoute.POST(request(body))).status, 200)
+  const successful = await globalRoute.POST(request(body))
+  assert.equal((await readAiConversation(successful, () => {})).drafts[0].moduleId, 'skills')
   drafts = [{ ...drafts[0], moduleId: 'personalInfo' }]
   const metadataResponse = await globalRoute.POST(request(body))
-  assert.equal(metadataResponse.status, 500)
-  assert.match((await metadataResponse.json()).error, /不是现有正文模块/)
+  await assert.rejects(readAiConversation(metadataResponse, () => {}), /不是现有正文模块/)
   drafts = [{ moduleId: 'skills', moduleName: '技能', changes: [{ type: 'replaceTags', rowId: 'skill-row', tags: ['React'] }] }]
   drafts.push(drafts[0])
   const duplicateResponse = await globalRoute.POST(request(body))
-  assert.equal(duplicateResponse.status, 500)
-  assert.match((await duplicateResponse.json()).error, /重复模块草稿/)
+  await assert.rejects(readAiConversation(duplicateResponse, () => {}), /重复模块草稿/)
+})
+
+function streamResponse(events, fragmentSize = 13) {
+  const bytes = new TextEncoder().encode(events)
+  const body = new ReadableStream({ start(controller) {
+    for (let index = 0; index < bytes.length; index += fragmentSize) controller.enqueue(bytes.slice(index, index + fragmentSize))
+    controller.close()
+  } })
+  return new Response(body, { headers: { 'content-type': 'text/event-stream' } })
+}
+
+test('stream reader handles split UTF-8, CRLF, multiple events and a final packet without a blank line', async () => {
+  const result = { status: 'completed', output: [{ type: 'message', content: [{ type: 'output_text', text: '完整中文结果' }] }] }
+  const events = ': heartbeat\r\n\r\ndata: ' + JSON.stringify({ type: 'response.reasoning_text.delta', delta: '思考' }) + '\r\n\r\n' +
+    'event: response.completed\r\ndata: ' + JSON.stringify({ type: 'response.completed', response: result })
+  assert.deepEqual(await readResponsesStream(streamResponse(events, 1)), result)
+})
+
+test('stream reader rejects incomplete, failed and interrupted streams instead of applying partial content', async () => {
+  await assert.rejects(readResponsesStream(streamResponse('data: ' + JSON.stringify({
+    type: 'response.incomplete', response: { incomplete_details: { reason: 'max_output_tokens' } },
+  }) + '\n\n')), /max_output_tokens/)
+  await assert.rejects(readResponsesStream(streamResponse('data: ' + JSON.stringify({
+    type: 'response.failed', response: { error: { message: 'upstream error' } },
+  }) + '\n\n')), /upstream error/)
+  await assert.rejects(readResponsesStream(streamResponse('data: ' + JSON.stringify({
+    type: 'response.output_text.delta', delta: '{"reply":',
+  }) + '\n\n')), /提前结束/)
+})
+
+test('module endpoint streams reply text before returning the validated draft', async (t) => {
+  const output = { reply: '已生成项目要点', changes: [{ type: 'insertRow', row: { type: 'rich', columns: [richList] } }] }
+  t.mock.method(globalThis, 'fetch', async () => streamResponse('data: ' + JSON.stringify({
+    type: 'response.output_text.delta', delta: '{"reply":"已生成',
+  }) + '\n\ndata: ' + JSON.stringify({
+    type: 'response.output_text.delta', delta: '项目要点","changes":[]}',
+  }) + '\n\ndata: ' + JSON.stringify({
+    type: 'response.completed', response: { status: 'completed', output: [{ type: 'message', content: [{ type: 'output_text', text: JSON.stringify(output) }] }] },
+  }) + '\n\n'))
+  const response = await moduleRoute.POST(request({ module: project, resumeData: resume, messages: [{ role: 'user', content: '生成项目要点' }] }))
+  assert.equal(response.status, 200)
+  assert.match(response.headers.get('content-type'), /text\/event-stream/)
+  const replies = []
+  assert.deepEqual(await readAiConversation(response, (reply) => replies.push(reply)), output)
+  assert.deepEqual(replies, ['已生成', '已生成项目要点'])
+})
+
+test('HTTP 401 remains an authentication error even if the provider labels it as an event stream', async (t) => {
+  t.mock.method(globalThis, 'fetch', async () => new Response('{"error":{"message":"Invalid token"}}', {
+    status: 401, headers: { 'content-type': 'text/event-stream' },
+  }))
+  await assert.rejects(callOpenAi({
+    config: { provider: 'openai', model: 'test', baseUrl: 'https://example.invalid/v1', apiKey: 'test-key' },
+    options: { messages: [{ role: 'user', content: '测试' }], stream: true },
+  }), (error) => error.status === 401 && error.message.includes('Invalid token'))
+})
+
+test('client decodes incomplete escaped reply strings without exposing draft JSON', async () => {
+  const result = { reply: '你好\n"项目"', changes: [] }
+  const events = [
+    { type: 'delta', delta: '{"reply":"你\\u59' },
+    { type: 'delta', delta: '7d\\n\\"项' },
+    { type: 'delta', delta: '目\\"","changes":[]}' },
+    { type: 'result', result },
+  ].map((event) => 'data: ' + JSON.stringify(event) + '\n\n').join('')
+  const replies = []
+  assert.deepEqual(await readAiConversation(streamResponse(events, 1), (reply) => replies.push(reply)), result)
+  assert.deepEqual(replies, ['你', '你好\n"项', '你好\n"项目"'])
+})
+
+test('client receives provider errors through the stream and never returns an applicable draft', async () => {
+  const response = createConversationStream(new AbortController().signal, async () => {
+    throw new Error('上游返回 Invalid token')
+  })
+  await assert.rejects(readAiConversation(response, () => {}), /Invalid token/)
+})
+
+test('closing the response stream aborts the upstream request', async () => {
+  let upstreamSignal
+  const response = createConversationStream(new AbortController().signal, async ({ signal }) => {
+    upstreamSignal = signal
+    await new Promise((resolve) => signal.addEventListener('abort', resolve, { once: true }))
+    return { reply: '已取消', changes: [] }
+  })
+  const reader = response.body.getReader()
+  await reader.read()
+  await reader.cancel()
+  assert.equal(upstreamSignal.aborted, true)
+})
+
+test('Anthropic and Gemini stream text while keeping thinking content out of the reply', async (t) => {
+  let provider = 'anthropic'
+  t.mock.method(globalThis, 'fetch', async (url, options) => {
+    const body = JSON.parse(options.body)
+    if (provider === 'anthropic') {
+      assert.equal(body.stream, true)
+      return streamResponse([
+        { type: 'content_block_delta', delta: { type: 'thinking_delta', thinking: '内部思考' } },
+        { type: 'content_block_delta', delta: { type: 'text_delta', text: '你好' } },
+        { type: 'message_delta', delta: { stop_reason: 'end_turn' } },
+        { type: 'message_stop' },
+      ].map((event) => 'data: ' + JSON.stringify(event) + '\n\n').join(''))
+    }
+    assert.match(url, /streamGenerateContent\?alt=sse/)
+    assert.equal(body.generationConfig.responseMimeType, 'application/json')
+    return streamResponse('data: ' + JSON.stringify({ candidates: [{ content: { parts: [
+      { thought: true, text: '内部思考' }, { text: '你好' },
+    ] }, finishReason: 'STOP' }] }) + '\n\n')
+  })
+  const replies = []
+  const options = { messages: [{ role: 'user', content: '你好' }], stream: true, jsonResponse: true, onTextDelta: (text) => replies.push(text) }
+  const config = { provider: 'anthropic', model: 'test', baseUrl: 'https://example.invalid/v1', apiKey: 'test-key' }
+  assert.equal((await callAnthropic({ config, options })).text, '你好')
+  provider = 'gemini'
+  assert.equal((await callGemini({ config: { ...config, provider }, options })).text, '你好')
+  assert.deepEqual(replies, ['你好', '你好'])
 })

@@ -8,7 +8,7 @@ import {
   type SetStateAction,
 } from "react"
 import { useToast } from "@/hooks/use-toast"
-import { withStoredAiRequestConfig } from "@/lib/ai/client-config-storage"
+import { requestAiConversation } from "@/lib/ai/conversation-client"
 import type { GlobalAiMessage, GlobalAiResponse, GlobalAiModuleDraft } from "@/types/global-ai"
 import type { ResumeData } from "@/types/resume"
 
@@ -95,11 +95,16 @@ async function sendMessage(options: SendMessageOptions): Promise<void> {
   options.setIsLoading(true)
   const controller = new AbortController()
   options.requestRef.current = controller
+  const assistantMessage = createUiMessage("assistant", "")
   try {
-    const response = await requestGlobalAi(options.resumeData, nextMessages, controller.signal)
-    options.setMessages([...nextMessages, createAssistantMessage(response)])
+    const response = await requestGlobalAi(options.resumeData, nextMessages, controller.signal, (reply) => {
+      if (options.requestRef.current === controller) options.setMessages([...nextMessages, { ...assistantMessage, content: reply }])
+    })
+    if (options.requestRef.current === controller) {
+      options.setMessages([...nextMessages, { ...createAssistantMessage(response), id: assistantMessage.id }])
+    }
   } catch (caught) {
-    handleRequestError(caught, options)
+    if (options.requestRef.current === controller) handleRequestError(caught, options)
   } finally {
     finishRequest(options.requestRef, controller, options.setIsLoading)
   }
@@ -125,16 +130,9 @@ async function requestGlobalAi(
   resumeData: ResumeData,
   messages: readonly UiGlobalAiMessage[],
   signal: AbortSignal,
+  onReply: (reply: string) => void,
 ): Promise<GlobalAiResponse> {
-  const response = await fetch("/api/ai/global-chat", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(withStoredAiRequestConfig({ resumeData, messages: messages.map(toApiMessage) })),
-    signal,
-  })
-  const data = parseResponseJson(await response.text())
-  if (!response.ok) throw new Error(readErrorMessage(data))
-  return data as GlobalAiResponse
+  return requestAiConversation("/api/ai/global-chat", { resumeData, messages: messages.map(toApiMessage) }, signal, onReply)
 }
 
 function resetSession(
@@ -146,18 +144,6 @@ function resetSession(
   options.setInput("")
   options.setError(null)
   options.setIsLoading(false)
-}
-
-function parseResponseJson(text: string): unknown {
-  if (!text) throw new Error("服务端没有返回内容")
-  return JSON.parse(text) as unknown
-}
-
-function readErrorMessage(data: unknown): string {
-  if (data && typeof data === "object" && "error" in data) {
-    return String((data as { error: unknown }).error)
-  }
-  return "请求失败"
 }
 
 function finishRequest(
